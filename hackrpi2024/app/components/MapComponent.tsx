@@ -12,8 +12,9 @@ const MapComponent: React.FC = () => {
     const bounds: [number, number, number, number] = [-74.0210, 40.6981, -73.8655, 40.9153];
     const [selectedBuildingId, setSelectedBuildingId] = useState<number | null>(null);
     const [address, setAddress] = useState<string | null>(null);
-    const [buildingInfo, setBuildingInfo] = useState<string | null>(null)
-    const [highlightedBuilding, setHighlightedBuilding] = useState<string | null>(null); // To track the highlighted building
+    const [buildingInfo, setBuildingInfo] = useState<string | null>(null);
+    const [highlightedBuilding, setHighlightedBuilding] = useState<string | null>(null);
+    const [updateTrigger, setUpdateTrigger] = useState<boolean>(false); // State for forcing re-render
 
     useEffect(() => {
         const map = new mapboxgl.Map({
@@ -26,13 +27,11 @@ const MapComponent: React.FC = () => {
             maxBounds: bounds,
         });
         
-        // Increment loading progress faster with a simulated interval until fully loaded
         const interval = setInterval(() => {
             setLoadingProgress((prev) => (prev < 95 ? prev + 5 : prev));
-        }, 100); // Increment by 5% every 100ms for faster loading effect
-        
+        }, 100);
+
         map.on('load', () => {
-            // Add the 3D buildings layer
             map.addLayer({
                 'id': '3d-buildings',
                 'source': 'composite',
@@ -46,15 +45,15 @@ const MapComponent: React.FC = () => {
                         'interpolate',
                         ['linear'],
                         ['get', 'height'],
-                        0, '#E3F2FD',       
+                        0, '#E3F2FD',
                         20, '#BBDEFB',
                         40, '#90CAF9',
                         60, '#64B5F6',
                         80, '#42A5F5',
-                        100, '#2196F3',     
+                        100, '#2196F3',
                         150, '#1E88E5',
                         200, '#1976D2',
-                        250, '#1565C0'      
+                        250, '#1565C0'
                     ],
                     'fill-extrusion-height': ['get', 'height'],
                     'fill-extrusion-base': ['get', 'min_height'],
@@ -62,19 +61,36 @@ const MapComponent: React.FC = () => {
                 }
             });
 
+            // Existing red highlight layer
             map.addLayer({
                 'id': 'highlighted-building',
                 'type': 'fill-extrusion',
                 'source': 'composite',
                 'source-layer': 'building',
-                'filter': ['==', 'id', ''], // Initially no building is highlighted
+                'filter': ['==', 'id', ''],
                 'paint': {
-                    'fill-extrusion-color': '#ff0000', // Color of highlighted building
+                    'fill-extrusion-color': '#ff0000',
+                    'fill-extrusion-height': ['get', 'height'],
+                    'fill-extrusion-base': ['get', 'min_height'],
                     'fill-extrusion-opacity': 0.8,
                 }
             });
 
-            // End the interval and set loading to 100% when all data is loaded
+            // New yellow highlight layer
+            map.addLayer({
+                'id': 'yellow-highlight-building',
+                'type': 'fill-extrusion',
+                'source': 'composite',
+                'source-layer': 'building',
+                'filter': ['==', 'id', ''],
+                'paint': {
+                    'fill-extrusion-color': '#FFFF00', // Yellow color
+                    'fill-extrusion-height': ['get', 'height'],
+                    'fill-extrusion-base': ['get', 'min_height'],
+                    'fill-extrusion-opacity': 0.9,
+                }
+            });
+
             map.once('idle', () => {
                 clearInterval(interval);
                 setLoadingProgress(100);
@@ -83,10 +99,9 @@ const MapComponent: React.FC = () => {
 
             map.on('click', (event) => {
                 const { lng, lat } = event.lngLat;
-                console.log("Longitude: " + lng + " Latitude: " + lat);
                 reverseGeocode([lng, lat]);
                 findBuildingAtCoordinates([lng, lat]);
-            })
+            });
         });
 
         const reverseGeocode = async (coordinates: [number, number]) => {
@@ -99,7 +114,7 @@ const MapComponent: React.FC = () => {
                 const firstResult = data.features[0];
 
                 if (firstResult) {
-                    setAddress(firstResult.place_name);  // Extract and set the address
+                    setAddress(firstResult.place_name);
                 } else {
                     setAddress("Address not found");
                 }
@@ -111,8 +126,6 @@ const MapComponent: React.FC = () => {
 
         const findBuildingAtCoordinates = (coordinates: [number, number]) => {
             const [longitude, latitude] = coordinates;
-            
-            // Use Mapbox's queryRenderedFeatures to query buildings layer at the clicked coordinates
             const features = map.queryRenderedFeatures(
                 map.project([longitude, latitude]),
                 { layers: ['3d-buildings'] }
@@ -124,16 +137,25 @@ const MapComponent: React.FC = () => {
 
                 setBuildingInfo(`Building ID: ${building.id} Height: ${building.properties!.height}`);
                 setHighlightedBuilding(buildingId);
-                // Highlight the building by setting the filter of the 'highlighted-building' layer
+                // Set filter for both the red and yellow highlight layers
                 map.setFilter('highlighted-building', ['==', 'id', buildingId]);
+                map.setFilter('yellow-highlight-building', ['==', 'id', buildingId]);
+                
+                // Trigger component re-render
+                setUpdateTrigger((prev) => !prev);
             } else {
                 setBuildingInfo("No building found at this location.");
-                setHighlightedBuilding(null); // Reset if no building is found
+                setHighlightedBuilding(null);
+                map.setFilter('highlighted-building', ['==', 'id', '']);
+                map.setFilter('yellow-highlight-building', ['==', 'id', '']);
+                
+                // Trigger component re-render
+                setUpdateTrigger((prev) => !prev);
             }
         };
 
         return () => map.remove();
-    }, []);
+    }, [updateTrigger]); // Depend on updateTrigger to re-render when it changes
 
     return (
         <div className="relative w-full h-screen">
@@ -148,14 +170,12 @@ const MapComponent: React.FC = () => {
                         />
                     </div>
                 </div>
-            ) :
-            (
+            ) : (
                 <div className="absolute top-0 right-0 p-4 bg-white text-black bg-opacity-70">
                     <h1 className="text-lg font-bold">Address: {address || 'Loading...'}</h1>
                     <h1 className="text-lg font-bold">Building Info: {buildingInfo || 'Loading...'}</h1>
                 </div>
-            )
-            }
+            )}
         </div>
     );
 };
