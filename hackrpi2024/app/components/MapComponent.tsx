@@ -23,35 +23,8 @@ const MapComponent: React.FC = () => {
         });
 
         map.on('load', () => {
-            // Add a source for the regions
-            map.addSource('regions', {
-                type: 'geojson',
-                data: '/regions.geojson' // Path to your GeoJSON file
-            });
 
-            // Add a layer to display the regions
-            map.addLayer({
-                id: 'regions-layer',
-                type: 'fill',
-                source: 'regions',
-                paint: {
-                    'fill-color': '#888888',
-                    'fill-opacity': 0.4
-                }
-            });
-
-            // Add a layer for the region borders
-            map.addLayer({
-                id: 'regions-borders',
-                type: 'line',
-                source: 'regions',
-                paint: {
-                    'line-color': '#000000',
-                    'line-width': 2
-                }
-            });
-
-            // Insert a 3D building layer
+            // Insert a 3D building layer with color based on height
             map.addLayer({
                 'id': '3d-buildings',
                 'source': 'composite',
@@ -60,12 +33,26 @@ const MapComponent: React.FC = () => {
                 'type': 'fill-extrusion',
                 'minzoom': 15, // Minimum zoom level for showing 3D buildings
                 'paint': {
-                'fill-extrusion-color': '#aaa',
-                'fill-extrusion-height': ['get', 'height'],
-                'fill-extrusion-base': ['get', 'min_height'],
-                'fill-extrusion-opacity': 0.6,
+                    'fill-extrusion-color': [
+                        'interpolate',
+                        ['linear'],
+                        ['get', 'height'],
+                        0, '#E3F2FD',       // Lightest blue
+                        20, '#BBDEFB',
+                        40, '#90CAF9',
+                        60, '#64B5F6',
+                        80, '#42A5F5',
+                        100, '#2196F3',     // Medium blue
+                        150, '#1E88E5',
+                        200, '#1976D2',
+                        250, '#1565C0'      // Darkest blue
+                    ],
+                    'fill-extrusion-height': ['get', 'height'],
+                    'fill-extrusion-base': ['get', 'min_height'],
+                    'fill-extrusion-opacity': 0.6,
                 }
             });
+            
 
             // Change the cursor to a pointer when the mouse is over the regions layer
             map.on('mouseenter', 'regions-layer', () => {
