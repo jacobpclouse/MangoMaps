@@ -139,7 +139,7 @@ const MapComponent: React.FC = () => {
         <div className="relative w-full h-screen">
             <div ref={mapContainerRef} className="absolute top-0 bottom-0 w-full h-full" />
 
-            {!isMapLoaded && (
+            {!isMapLoaded ? (
                 <div className="absolute inset-0 flex items-center justify-center bg-white z-50">
                     <div className="w-1/2 bg-gray-200 rounded-full h-4">
                         <div
@@ -148,7 +148,14 @@ const MapComponent: React.FC = () => {
                         />
                     </div>
                 </div>
-            )}
+            ) :
+            (
+                <div className="absolute top-0 right-0 p-4 bg-white text-black bg-opacity-70">
+                    <h1 className="text-lg font-bold">Address: {address || 'Loading...'}</h1>
+                    <h1 className="text-lg font-bold">Building Info: {buildingInfo || 'Loading...'}</h1>
+                </div>
+            )
+            }
         </div>
     );
 };
