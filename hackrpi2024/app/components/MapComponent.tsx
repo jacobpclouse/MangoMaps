@@ -66,6 +66,11 @@ const MapComponent: React.FC = () => {
             });
         });
 
+        map.on('click', (event) => {
+            const { lng, lat } = event.lngLat;
+            console.log("Longitude: " + lng + " Latitude: " + lat);
+        })
+
         return () => map.remove();
     }, []);
 
