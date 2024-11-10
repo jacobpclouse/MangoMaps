@@ -51,7 +51,7 @@ const DisasterToolbar: React.FC<DisasterToolbarProps> = ({ map, isMapLoaded }) =
     setActiveDisaster(null);
   };
 
-  const handleMapClick = (e) => {
+  const handleMapClick = (e: any) => {
     if (!isAnalysisMode || !activeDisaster) return;
 
     const { lng, lat } = e.lngLat;
@@ -114,7 +114,7 @@ const DisasterToolbar: React.FC<DisasterToolbarProps> = ({ map, isMapLoaded }) =
     const features = map.queryRenderedFeatures(bounds, { layers: ['3d-buildings'] });
 
     if (features.length > 0) {
-      const affectedBuildings = features.map(feature => feature.id);
+      const affectedBuildings = features.map((feature: any) => feature.id);
 
       map.setPaintProperty('3d-buildings', 'fill-extrusion-color', [
         'case',
