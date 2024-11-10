@@ -101,6 +101,27 @@ const MapComponent: React.FC = () => {
           isFloodVisible ? "visible" : "none"
         );
         
+        map.addSource("hurricane-evacuation", {
+          type: "geojson",
+          data: "Hurricane_Evac.geojson", // Replace with the correct path to your file
+        });
+        
+        map.addLayer({
+          id: "hurricane-evac-layer",
+          type: "fill",
+          source: "hurricane-evacuation",
+          paint: {
+            "fill-color": "#FF6347", // Tomato red color for evacuation zones
+            "fill-opacity": 0.5,
+          },
+        });
+        
+        map.setLayoutProperty(
+          "hurricane-evac-layer",
+          "visibility",
+          isEvacuationVisible ? "visible" : "none" // Control visibility based on the `isEvacuationVisible` variable
+        );
+        
         map.addLayer({
           id: "3d-buildings",
           source: "composite",
@@ -227,6 +248,19 @@ const MapComponent: React.FC = () => {
         newVisibility
       );
       setIsFloodVisible(!isFloodVisible);
+    }
+  };
+
+  const [isEvacuationVisible, setIsEvacuationVisible] = useState<boolean>(false);
+  const toggleEvacuationVisibility = () => {
+    if (currMap) {
+      const newVisibility = isEvacuationVisible ? "none" : "visible";
+      currMap.setLayoutProperty(
+        "hurricane-evac-layer",
+        "visibility",
+        newVisibility
+      );
+      setIsEvacuationVisible(!isEvacuationVisible);
     }
   };
   
@@ -427,6 +461,19 @@ const MapComponent: React.FC = () => {
                 Energy
               </label>
             </div> */}
+            {/* Evacuation */}
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="evacuationLayer"
+                className="h-5 w-5"
+                checked={isEvacuationVisible}
+                onChange={toggleEvacuationVisibility}
+              />
+              <label htmlFor="evacuationLayer" className="text-sm">
+                Evacuation
+              </label>
+            </div>
 
             {/* Air */}
             <div className="flex items-center space-x-2">
