@@ -38,9 +38,7 @@ const MapComponent: React.FC = () => {
       }, 100);
 
       map.on("load", () => {
-        fetchSolarData(40.7829, -73.9654, 5000); // Fetch solar data for NYC
-        const apiKey = "AIzaSyA-51pZHoT-21FHrhXwzTGT-vO3rn5fByc"; // Replace with your actual API key
-        
+        fetchSolarData(40.7829, -73.9654, 5000); // Fetch solar data for NYC        
         const defaultBuildingPaint: DataDrivenPropertyValueSpecification<string> = [
           "interpolate",
           ["linear"],

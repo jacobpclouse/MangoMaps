@@ -42,7 +42,7 @@ const BuildingInfo: React.FC<BuildingInfoProps> = ({ latitude, longitude }) => {
         const data = await response.json();
         setBuildingInfo(data);
       } catch (err) {
-        setError('Unable to fetch building information. Please try again later.');
+        setError('Click on a building to view more information');
       }
     };
 
@@ -51,9 +51,8 @@ const BuildingInfo: React.FC<BuildingInfoProps> = ({ latitude, longitude }) => {
 
   if (error) {
     return (
-      <div className="rounded-lg bg-red-50 p-4 text-red-800">
+      <div className="rounded-lg p-4 text-neutral-800">
         <p className="flex items-center gap-2">
-          <span className="rounded-full bg-red-100 p-1">⚠️</span>
           {error}
         </p>
       </div>
@@ -62,12 +61,12 @@ const BuildingInfo: React.FC<BuildingInfoProps> = ({ latitude, longitude }) => {
 
   if (!buildingInfo) {
     return (
-      <Card className="w-full">
-        <CardHeader className="space-y-2">
-          <Skeleton className="h-4 w-2/3" />
-          <Skeleton className="h-4 w-1/2" />
+      <Card className="w-[20rem]">
+        <CardHeader className="space-y-2 ">
+          <Skeleton className="h-4 w-2/3 shimmer" />
+          <Skeleton className="h-4 w-1/2 shimmer" />
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 w-full shimmer">
           <Skeleton className="h-32 w-full" />
           <Skeleton className="h-4 w-3/4" />
           <Skeleton className="h-4 w-1/2" />
@@ -77,14 +76,15 @@ const BuildingInfo: React.FC<BuildingInfoProps> = ({ latitude, longitude }) => {
   }
 
   return (
-    <Card className="w-full">
+    <Card className="w-[20rem]">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Building className="h-5 w-5" />
           {buildingInfo.name}
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <div className='w-full h-[1px] bg-neutral-500 ' />
+      <CardContent className="space-y-3">
         {/* Address Section */}
         <div className="flex items-start gap-2">
           <MapPin className="mt-1 h-4 w-4 text-gray-500" />

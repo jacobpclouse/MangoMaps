@@ -275,95 +275,44 @@ const DisasterToolbar: React.FC<DisasterToolbarProps> = ({
 
   return (
     <div
-      style={{
-        position: "absolute",
-        bottom: "1rem",
-        left: "50%",
-        transform: "translateX(-50%)",
-        zIndex: 10,
-      }}
+      className="absolute bottom-0 right-0 md:right-1/2 transform translate-x-0 md:translate-x-1/2 z-10"
     >
-      <div
-        style={{
-          backgroundColor: "#fff",
-          padding: "1rem",
-          width: "16rem",
-          boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: "1rem",
-          }}
+      <div className="bg-white p-4 w-64 shadow-md flex flex-col gap-2">
+        <h3 className="font-bold text-black">Disaster Analysis Tools</h3>
+        <button
+          onClick={clearAnalysis}
+          className="bg-red-500 text-white px-2 py-1 rounded-lg"
         >
-          <h3 style={{ fontWeight: "bold", color: "#000" }}>
-            Disaster Analysis Tools
-          </h3>
-          <button
-            onClick={clearAnalysis}
-            style={{
-              backgroundColor: "#ff4444",
-              color: "#fff",
-              padding: "0.25rem 0.5rem",
-              border: "none",
-              cursor: "pointer",
-            }}
-          >
-            Clear
-          </button>
-        </div>
+          Clear
+        </button>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: "0.5rem",
-          }}
-        >
+
+        <div className="grid grid-cols-2 gap-2 mt-2">
           <button
             onClick={() => activateDisasterTool("Nuke")}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "0.5rem",
-              padding: "0.5rem",
-              border: "1px solid #ccc",
-              borderRadius: "0.25rem",
-              cursor: "pointer",
-              backgroundColor:
-                activeDisaster === "Nuke" ? "#ff4444" : "#fff",
-              color: activeDisaster === "Nuke" ? "#fff" : "#000",
-            }}
+            className={`flex items-center gap-2 p-2 border border-gray-300 rounded cursor-pointer ${
+              activeDisaster === "Nuke"
+                ? "bg-red-500 text-white"
+                : "bg-white text-black"
+            }`}
           >
-            <Radiation style={{ width: "1rem", height: "1rem" }} />
+            <Radiation className="w-4 h-4" />
             Nuke (10 KT)
           </button>
           <button
             onClick={() => activateDisasterTool("Big Nuke")}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "0.5rem",
-              padding: "0.5rem",
-              border: "1px solid #ccc",
-              borderRadius: "0.25rem",
-              cursor: "pointer",
-              backgroundColor: activeDisaster === "Big Nuke" ? "#ff4444" : "#fff",
-              color: activeDisaster === "Big Nuke" ? "#fff" : "#000",
-            }}
+            className={`flex items-center gap-2 p-2 border border-gray-300 rounded cursor-pointer ${
+              activeDisaster === "Big Nuke"
+                ? "bg-red-500 text-white"
+                : "bg-white text-black"
+            }`}
           >
-            <Radiation style={{ width: "1rem", height: "1rem" }} />
+            <Radiation className="w-4 h-4" />
             Big Nuke (15 KT)
           </button>
         </div>
-        <div style={{ marginTop: "1rem" }}>
-          <label
-            htmlFor="flood-slider"
-            style={{ display: "block", marginBottom: "0.5rem", color: "black" }}
-          >
+        <div className="mt-4">
+          <label htmlFor="flood-slider" className="block mb-2 text-black">
             Water Level
           </label>
           <input
@@ -373,32 +322,13 @@ const DisasterToolbar: React.FC<DisasterToolbarProps> = ({
             max="100"
             value={waterLevel}
             onChange={handleWaterLevelChange}
-            style={{ width: "100%" }}
+            className="w-full"
           />
         </div>
         {showAlert && (
-          <div
-            style={{
-              marginTop: "1rem",
-              padding: "0.75rem",
-              backgroundColor: "#ffe4e4",
-              display: "flex",
-              alignItems: "center",
-              border: "1px solid #ff4444",
-              borderRadius: "0.25rem",
-            }}
-          >
-            <AlertTriangle
-              style={{
-                width: "1rem",
-                height: "1rem",
-                marginRight: "0.5rem",
-                color: "#ff4444",
-              }}
-            />
-            <span style={{ color: "#000" }}>
-              BOMBA 💣
-            </span>
+          <div className="mt-4 p-3 bg-red-100 flex items-center border border-red-500 rounded">
+            <AlertTriangle className="w-4 h-4 mr-2 text-red-500" />
+            <span className="text-black">BOMBA 💣</span>
           </div>
         )}
       </div>
