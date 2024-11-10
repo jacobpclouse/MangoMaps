@@ -13,13 +13,7 @@ const DisasterToolbar: React.FC<DisasterToolbarProps> = ({ map, isMapLoaded }) =
 
   const clearAnalysis = () => {
     if (map) {
-        map.boxZoom.enable();
-        map.doubleClickZoom.enable();
         map.dragPan.enable();
-        map.dragRotate.enable();
-        map.keyboard.enable();
-        map.scrollZoom.enable();
-        map.touchZoomRotate.enable();
         setShowAlert(false);
     if (map.getLayer('blast-radius')) {
       map.removeLayer('blast-radius');
@@ -57,110 +51,118 @@ const DisasterToolbar: React.FC<DisasterToolbarProps> = ({ map, isMapLoaded }) =
   };
 
   const handleMapClick = (e: any) => {
-    if (!isAnalysisMode || !activeDisaster) return;
-  
-    const { lng, lat } = e.lngLat;
-    map.flyTo({
-      center: [lng, lat],
-      zoom: 13,
-      pitch: 0,
-      bearing: 0,
-      essential: true // this animation is considered essential with respect to prefers-reduced-motion
-    });
-    map.boxZoom.disable();
-    map.doubleClickZoom.disable();
-    map.dragPan.disable();
-    map.dragRotate.disable();
-    map.keyboard.disable();
-    map.scrollZoom.disable();
-    map.touchZoomRotate.disable();
-  
-    if (activeDisaster === 'nuclear') {
-      const center = [lng, lat];
-      const innerRadius = 0.6; // 610m in kilometers
-      const outerRadius = 1.2; // 1220m in kilometers
-  
-      const innerCircle = {
-        type: 'Feature',
-        geometry: { type: 'Point', coordinates: center },
-        properties: { radius: innerRadius }
-      };
-  
-      const outerCircle = {
-        type: 'Feature',
-        geometry: { type: 'Point', coordinates: center },
-        properties: { radius: outerRadius }
-      };
-  
-      if (map.getLayer('blast-radius')) {
-        map.removeLayer('blast-radius');
-      }
-      if (map.getSource('blast-radius')) {
-        map.removeSource('blast-radius');
-      }
-  
-      if (map.getLayer('outer-blast-radius')) {
-        map.removeLayer('outer-blast-radius');
-      }
-      if (map.getSource('outer-blast-radius')) {
-        map.removeSource('outer-blast-radius');
-      }
-  
-      map.addSource('blast-radius', {
-        type: 'geojson',
-        data: innerCircle
+      if (!isAnalysisMode || !activeDisaster) return;
+    
+      const { lng, lat } = e.lngLat;
+      map.flyTo({
+        center: [lng, lat],
+        zoom: 13,
+        pitch: 0,
+        bearing: 0,
+        essential: true // this animation is considered essential with respect to prefers-reduced-motion
       });
-  
-      map.addSource('outer-blast-radius', {
-        type: 'geojson',
-        data: outerCircle
-      });
-  
-      map.addLayer({
-        id: 'blast-radius',
-        type: 'circle',
-        source: 'blast-radius',
-        paint: {
-          'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, ['*', innerRadius, 100], 15, ['*', innerRadius, 1000]],
-          'circle-color': '#FF0000',
-          'circle-opacity': 0.5,
-          'circle-stroke-width': 2,
-          'circle-stroke-color': '#FF0000'
+      map.dragRotate.disable();
+    //   map.scrollZoom.disable();
+      map.touchZoomRotate.disable();
+    
+      if (activeDisaster === 'nuclear') {
+        const center = [lng, lat];
+        const innerRadius = 610; // 610 meters
+        const outerRadius = 1220; // 1220 meters
+    
+        const innerCircle = {
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: center },
+          properties: { radius: innerRadius }
+        };
+    
+        const outerCircle = {
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: center },
+          properties: { radius: outerRadius }
+        };
+    
+        if (map.getLayer('blast-radius')) {
+          map.removeLayer('blast-radius');
         }
-      });
-  
-      map.addLayer({
-        id: 'outer-blast-radius',
-        type: 'circle',
-        source: 'outer-blast-radius',
-        paint: {
-          'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, ['*', outerRadius, 100], 15, ['*', outerRadius, 1000]],
-          'circle-color': '#FFA500',
-          'circle-opacity': 0.3,
-          'circle-stroke-width': 2,
-          'circle-stroke-color': '#FFA500'
+        if (map.getSource('blast-radius')) {
+          map.removeSource('blast-radius');
         }
-      });
-  
-      const bounds = [
-        [lng - outerRadius / 111, lat - outerRadius / 111],
-        [lng + outerRadius / 111, lat + outerRadius / 111]
-      ];
-  
-      const features = map.queryRenderedFeatures(bounds, { layers: ['3d-buildings'] });
-  
-      if (features.length > 0) {
-        const affectedBuildings = features.map(feature => feature.id);
-  
-        map.setPaintProperty('3d-buildings', 'fill-extrusion-color', [
-          'case',
-          ['in', ['id'], ['literal', affectedBuildings]],
-          '#FF4444',
-          ['interpolate', ['linear'], ['get', 'height'], 0, '#E3F2FD', 250, '#1565C0']
-        ]);
+    
+        if (map.getLayer('outer-blast-radius')) {
+          map.removeLayer('outer-blast-radius');
+        }
+        if (map.getSource('outer-blast-radius')) {
+          map.removeSource('outer-blast-radius');
+        }
+    
+        map.addSource('blast-radius', {
+          type: 'geojson',
+          data: innerCircle
+        });
+    
+        map.addSource('outer-blast-radius', {
+          type: 'geojson',
+          data: outerCircle
+        });
+    
+        map.addLayer({
+          id: 'blast-radius',
+          type: 'circle',
+          source: 'blast-radius',
+          paint: {
+            'circle-radius': {
+              stops: [
+                [0, 0],
+                [20, innerRadius / 0.075]
+              ],
+              base: 2
+            },
+            'circle-color': '#FF0000',
+            'circle-opacity': 0.5,
+            'circle-stroke-width': 2,
+            'circle-stroke-color': '#FF0000'
+          }
+        });
+    
+        map.addLayer({
+          id: 'outer-blast-radius',
+          type: 'circle',
+          source: 'outer-blast-radius',
+          paint: {
+            'circle-radius': {
+              stops: [
+                [0, 0],
+                [20, outerRadius / 0.075]
+              ],
+              base: 2
+            },
+            'circle-color': '#FFA500',
+            'circle-opacity': 0.3,
+            'circle-stroke-width': 2,
+            'circle-stroke-color': '#FFA500'
+          }
+        });
+    
+        const bounds = [
+          [lng - outerRadius / 111000, lat - outerRadius / 111000],
+          [lng + outerRadius / 111000, lat + outerRadius / 111000]
+        ];
+    
+        const features = map.queryRenderedFeatures(bounds, { layers: ['3d-buildings'] });
+    
+        if (features.length > 0) {
+          const affectedBuildings = features.map(feature => feature.id);
+    
+          map.setPaintProperty('3d-buildings', 'fill-extrusion-color', [
+            'case',
+            ['in', ['id'], ['literal', affectedBuildings]],
+            '#FF4444',
+            ['interpolate', ['linear'], ['get', 'height'], 0, '#E3F2FD', 250, '#1565C0']
+          ]);
+        }
       }
-    }
-  };
+    };
   
   useEffect(() => {
     if (!map) return;
