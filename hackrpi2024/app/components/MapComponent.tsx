@@ -35,30 +35,43 @@ const MapComponent: React.FC = () => {
       }, 100);
 
       map.on("load", () => {
-        const defaultBuildingPaint: DataDrivenPropertyValueSpecification<string> =
-          [
-            "interpolate",
-            ["linear"],
-            ["get", "height"],
-            0,
-            "#E3F2FD",
-            20,
-            "#BBDEFB",
-            40,
-            "#90CAF9",
-            60,
-            "#64B5F6",
-            80,
-            "#42A5F5",
-            100,
-            "#2196F3",
-            150,
-            "#1E88E5",
-            200,
-            "#1976D2",
-            250,
-            "#1565C0",
-          ];
+        const defaultBuildingPaint: DataDrivenPropertyValueSpecification<string> = [
+          "interpolate",
+          ["linear"],
+          ["get", "height"],
+          0,
+          "#E3F2FD",
+          20,
+          "#BBDEFB",
+          40,
+          "#90CAF9",
+          60,
+          "#64B5F6",
+          80,
+          "#42A5F5",
+          100,
+          "#2196F3",
+          150,
+          "#1E88E5",
+          200,
+          "#1976D2",
+          250,
+          "#1565C0",
+        ];
+        map.addSource("sandy-inundation", {
+          type: "geojson",
+          data: "/sandy_inundation.geojson",
+        });
+
+        map.addLayer({
+          id: "sandy-inundation-layer",
+          type: "fill",
+          source: "sandy-inundation",
+          paint: {
+            "fill-color": "#00008B", // Dark blue color for inundation areas
+            "fill-opacity": 0.5,
+          },
+        });
         map.addLayer({
           id: "3d-buildings",
           source: "composite",
@@ -71,7 +84,7 @@ const MapComponent: React.FC = () => {
             "fill-extrusion-color": defaultBuildingPaint,
             "fill-extrusion-height": ["get", "height"],
             "fill-extrusion-base": ["get", "min_height"],
-            "fill-extrusion-opacity": 0.6,
+            "fill-extrusion-opacity": 0.85,
           },
         });
 
@@ -142,7 +155,7 @@ const MapComponent: React.FC = () => {
                 "fill-extrusion-color": "#00FF00", // Highlight with green color
                 "fill-extrusion-height": ["get", "height"],
                 "fill-extrusion-base": ["get", "min_height"],
-                "fill-extrusion-opacity": 0.8,
+                "fill-extrusion-opacity": 0.85,
               },
             });
           } else {
@@ -167,20 +180,7 @@ const MapComponent: React.FC = () => {
           }
         });
 
-        map.addSource("sandy-inundation", {
-          type: "geojson",
-          data: "/sandy_inundation.geojson",
-        });
-
-        map.addLayer({
-          id: "sandy-inundation-layer",
-          type: "fill",
-          source: "sandy-inundation",
-          paint: {
-            "fill-color": "#00008B", // Dark blue color for inundation areas
-            "fill-opacity": 0.5,
-          },
-        });
+        
       });
 
       setCurrMap(map);
