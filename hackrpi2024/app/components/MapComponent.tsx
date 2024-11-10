@@ -3,6 +3,7 @@ import mapboxgl, { DataDrivenPropertyValueSpecification } from "mapbox-gl";
 import BuildingInfo from "./BuildingInfo";
 import DisasterToolbar from "./Disaster";
 import axios from "axios";
+import LoadingBar from "./LoadingBar";
 
 mapboxgl.accessToken = "pk.eyJ1Ijoid2FuZ3duaWNvIiwiYSI6ImNtM2FoeGtzZzFkZWMycG9tendleXhna2cifQ.FyBqY-UtfsFwpqeaY0vlpw";
 
@@ -420,17 +421,7 @@ const MapComponent: React.FC = () => {
       />
 
       {!isMapLoaded ? (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-white z-50">
-          <div className="w-1/2 bg-gray-200 rounded-full h-4 mb-4">
-            <div
-              className="bg-blue-500 h-4 rounded-full"
-              style={{ width: `${loadingProgress}%` }}
-            />
-          </div>
-          <p className="text-lg font-semibold text-black">
-            Loading map... {loadingProgress}%
-          </p>
-        </div>
+        <LoadingBar loadingProgress={loadingProgress} />
       ) : (
         <div className="">
           <DisasterToolbar map={currMap} isMapLoaded={isMapLoaded} />
