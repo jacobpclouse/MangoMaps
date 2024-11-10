@@ -3,23 +3,78 @@ import mapboxgl, { DataDrivenPropertyValueSpecification } from "mapbox-gl";
 import BuildingInfo from "./BuildingInfo";
 import DisasterToolbar from "./Disaster";
 import axios from "axios";
-import { fromArrayBuffer } from "geotiff"; // For processing GeoTIFF files
 
 mapboxgl.accessToken = "pk.eyJ1Ijoid2FuZ3duaWNvIiwiYSI6ImNtM2FoeGtzZzFkZWMycG9tendleXhna2cifQ.FyBqY-UtfsFwpqeaY0vlpw";
 
 const MapComponent: React.FC = () => {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
-  const [isAirVisible, setIsAirVisible] = useState<boolean>(false);
-  const [isSolarVisible, setIsSolarVisible] = useState<boolean>(false);
-
   const bounds: [number, number, number, number] = [
     -74.021, 40.6981, -73.8655, 40.9153,
   ];
-  const [buildingInfo, setBuildingInfo] = useState<any | null>(null);
+  const [buildingInfo, setBuildingInfo] = useState<{lng: number, lat: number} | null>(null);
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const [currMap, setCurrMap] = useState<mapboxgl.Map | null>(null);
 
+
+
+  const [isFloodVisible, setIsFloodVisible] = useState<boolean>(false);
+  const toggleFloodVisibility = () => {
+    if (currMap) {
+      const newVisibility = isFloodVisible ? "none" : "visible";
+      currMap.setLayoutProperty(
+        "sandy-inundation-layer",
+        "visibility",
+        newVisibility
+      );
+      setIsFloodVisible(!isFloodVisible);
+    }
+  };
+
+  const [isEvacuationVisible, setIsEvacuationVisible] = useState<boolean>(false);
+  const toggleEvacuationVisibility = () => {
+    if (currMap) {
+      const newVisibility = isEvacuationVisible ? "none" : "visible";
+      currMap.setLayoutProperty(
+        "hurricane-evac-layer",
+        "visibility",
+        newVisibility
+      );
+      setIsEvacuationVisible(!isEvacuationVisible);
+    }
+  };
+
+  const [isAirVisible, setIsAirVisible] = useState<boolean>(false);
+  const toggleAirVisibility = () => {
+    if (currMap) {
+      if (!isAirVisible) {
+        currMap.flyTo({
+          center: [-73.9654, 40.7829], // Centered on NYC
+          zoom: 12, // Zoom out to a larger view
+          pitch: 0, // Set to top-down view
+          bearing: 0, // Reset bearing to north
+        });
+        if (currMap.getLayer('air-quality-labels')) {
+          currMap.setLayoutProperty('air-quality-labels', 'visibility', 'visible');
+        }
+        if (currMap.getLayer('air-quality-polygons')) {
+          currMap.setLayoutProperty('air-quality-polygons', 'visibility', 'visible');
+        }
+        else {
+          fetchAirQualityData();
+        }
+      } else {
+        // Set air quality labels and polygons to be invisible
+        if (currMap.getLayer('air-quality-labels')) {
+          currMap.setLayoutProperty('air-quality-labels', 'visibility', 'none');
+        }
+        if (currMap.getLayer('air-quality-polygons')) {
+          currMap.setLayoutProperty('air-quality-polygons', 'visibility', 'none');
+        }
+      }
+      setIsAirVisible(!isAirVisible);
+    }
+  };
 
   useEffect(() => {
     if (mapContainerRef.current && !currMap) {
@@ -38,8 +93,6 @@ const MapComponent: React.FC = () => {
       }, 100);
 
       map.on("load", () => {
-        const apiKey = "AIzaSyA-51pZHoT-21FHrhXwzTGT-vO3rn5fByc"; // Replace with your actual API key
-        
         const defaultBuildingPaint: DataDrivenPropertyValueSpecification<string> = [
           "interpolate",
           ["linear"],
@@ -166,11 +219,7 @@ const MapComponent: React.FC = () => {
               easing: (t) => t * (2 - t), // Smooth easing
             });
             const building = features[0];
-            const buildingId = building.id as number;
-            console.log(building);
             setBuildingInfo({
-              id: building.id,
-              height: building.properties!.height,
               lng: lng,
               lat: lat,
             });
@@ -211,7 +260,7 @@ const MapComponent: React.FC = () => {
               },
             });
           } else {
-            setBuildingInfo("No building found at this location.");
+            setBuildingInfo(null);
 
             // Clear selection by removing the highlighted building layer
             if (map.getLayer("highlighted-building-layer")) {
@@ -231,48 +280,47 @@ const MapComponent: React.FC = () => {
             ]); // Restore extrusion height
           }
         });
-
-        
       });
 
       setCurrMap(map);
     }
     return () => currMap?.remove();
-  }, [currMap]); // Depend on updateTrigger to re-render when it changes
-
-  const [isFloodVisible, setIsFloodVisible] = useState<boolean>(false);
-  const toggleFloodVisibility = () => {
-    if (currMap) {
-      const newVisibility = isFloodVisible ? "none" : "visible";
-      currMap.setLayoutProperty(
-        "sandy-inundation-layer",
-        "visibility",
-        newVisibility
-      );
-      setIsFloodVisible(!isFloodVisible);
-    }
-  };
-
-  const [isEvacuationVisible, setIsEvacuationVisible] = useState<boolean>(false);
-  const toggleEvacuationVisibility = () => {
-    if (currMap) {
-      const newVisibility = isEvacuationVisible ? "none" : "visible";
-      currMap.setLayoutProperty(
-        "hurricane-evac-layer",
-        "visibility",
-        newVisibility
-      );
-      setIsEvacuationVisible(!isEvacuationVisible);
-    }
-  };
-  
+  }, [currMap]);   
 
   const fetchAirQualityData = async () => {
     try {
       const apiKey = "AIzaSyA-51pZHoT-21FHrhXwzTGT-vO3rn5fByc"; // Replace with your actual API key
       const zipCodeGeoJson = await axios.get('/zipCodeData.geojson').then(response => response.data);
       const features = zipCodeGeoJson.features;
-      const airQualityDataPromises = features.map(async (feature: any) => {
+      interface FeatureProperties {
+        airQuality: string;
+        airQualityCategory: string;
+        airQualityColor: string;
+        [key: string]: unknown;
+      }
+
+      interface FeatureGeometry {
+        type: string;
+        coordinates: number[][][];
+      }
+
+      interface Feature {
+        type: string;
+        properties: FeatureProperties;
+        geometry: FeatureGeometry;
+      }
+
+      interface AirQualityData {
+        aqi: string;
+        category: string;
+        color: {
+          red: number;
+          green: number;
+          blue: number;
+        };
+      }
+
+      const airQualityDataPromises = features.map(async (feature: Feature) => {
         const { coordinates } = feature.geometry;
         const [lng, lat] = coordinates[0][0]; // Get the first coordinate of the polygon
         
@@ -296,7 +344,7 @@ const MapComponent: React.FC = () => {
         console.log(response);
         console.log(`Air quality data for coordinates (${lat}, ${lng}):`, response.data);
 
-        const airQualityData = response.data.indexes.find((index: any) => index.code === "uaqi");
+        const airQualityData = response.data.indexes.find((index: { code: string }) => index.code === "uaqi") as AirQualityData;
         return {
           ...feature,
           properties: {
@@ -361,36 +409,7 @@ const MapComponent: React.FC = () => {
     }
   };
 
-  const toggleAirVisibility = () => {
-    if (currMap) {
-      if (!isAirVisible) {
-        currMap.flyTo({
-          center: [-73.9654, 40.7829], // Centered on NYC
-          zoom: 12, // Zoom out to a larger view
-          pitch: 0, // Set to top-down view
-          bearing: 0, // Reset bearing to north
-        });
-        if (currMap.getLayer('air-quality-labels')) {
-          currMap.setLayoutProperty('air-quality-labels', 'visibility', 'visible');
-        }
-        if (currMap.getLayer('air-quality-polygons')) {
-          currMap.setLayoutProperty('air-quality-polygons', 'visibility', 'visible');
-        }
-        else {
-          fetchAirQualityData();
-        }
-      } else {
-        // Set air quality labels and polygons to be invisible
-        if (currMap.getLayer('air-quality-labels')) {
-          currMap.setLayoutProperty('air-quality-labels', 'visibility', 'none');
-        }
-        if (currMap.getLayer('air-quality-polygons')) {
-          currMap.setLayoutProperty('air-quality-polygons', 'visibility', 'none');
-        }
-      }
-      setIsAirVisible(!isAirVisible);
-    }
-  };
+
 
   
   return (
@@ -423,7 +442,7 @@ const MapComponent: React.FC = () => {
               />
             ) : (
               <p className="text-black">
-                "No building found at this location."
+                No building found at this location.
               </p>
             )}
           </div>
@@ -442,19 +461,7 @@ const MapComponent: React.FC = () => {
                 Flood
               </label>
             </div>
-            {/* Energy
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="energy"
-                className="h-5 w-5"
-                checked={isEnergyVisible}
-                onChange={toggleEnergyVisibility}
-              />
-              <label htmlFor="energy" className="text-sm">
-                Energy
-              </label>
-            </div> */}
+
             {/* Evacuation */}
             <div className="flex items-center space-x-2">
               <input

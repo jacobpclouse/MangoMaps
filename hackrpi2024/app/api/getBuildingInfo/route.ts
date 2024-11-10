@@ -11,6 +11,24 @@ const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: numbe
   return distance;
 };
 
+type Place = {
+  name: string;
+  vicinity: string;
+  addr: string;
+  geometry: {
+    location: {
+      lat: number;
+      lng: number;
+    };
+  };
+  photos?: {
+    photo_reference: string;
+  }[];
+  photoURL?: string;
+  distance?: number;
+  energy?: string;
+};
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const latitude = searchParams.get('latitude');
@@ -36,7 +54,7 @@ export async function GET(req: Request) {
     const places = data.results;
 
     if (places.length > 0) {
-      const sortedPlaces = places.map((place: any) => {
+      const sortedPlaces: Place[] = places.map((place: Place) => {
         const distance = calculateDistance(
           Number(latitude),
           Number(longitude),
@@ -44,9 +62,9 @@ export async function GET(req: Request) {
           place.geometry.location.lng
         );
         return { ...place, distance };
-      }).sort((a: any, b: any) => a.distance - b.distance);
+      }).sort((a: Place, b: Place) => (a.distance ?? Infinity) - (b.distance ?? Infinity));
 
-      const match = energy.find((match: any) => match.addr.toLowerCase() === sortedPlaces[0].vicinity.toLowerCase());
+      const match = energy.find((match: Place) => match.addr.toLowerCase() === sortedPlaces[0].vicinity.toLowerCase());
       if (match) {
         sortedPlaces[0].energy = energy[match.id].grade;
       }
@@ -61,7 +79,7 @@ export async function GET(req: Request) {
           sortedPlaces[0].photoURL = photoResponse.url;
           return NextResponse.json(sortedPlaces[0]);
         } catch (error) {
-          //console.error(error);
+          console.error(error);
           return NextResponse.json({ error: 'Failed to fetch photo information' }, { status: 500 });
         }
       }
@@ -72,7 +90,7 @@ export async function GET(req: Request) {
       throw new Error(`Failed to fetch: ${response.statusText}`);
     }
   } catch (error) {
-    //console.error(error);
+    console.error(error);
     return NextResponse.json({ error: 'Failed to fetch building information' }, { status: 500 });
   }
 }
