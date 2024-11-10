@@ -57,17 +57,6 @@ const MapComponent: React.FC = () => {
                     'fill-extrusion-opacity': 0.6,
                 }
             });
-            map.addLayer({
-                id: 'highlighted-building',
-                type: 'fill',
-                source: 'composite',
-                'source-layer': 'building', // the specific source layer in mapbox streets for buildings
-                paint: {
-                  'fill-color': '#FFD700', // Highlight color, e.g., gold
-                  'fill-opacity': 0.6
-                },
-                filter: ['==', 'id', ''] // Initially filter to an empty string (no buildings highlighted)
-              });
 
             map.once('idle', () => {
                 clearInterval(interval);
