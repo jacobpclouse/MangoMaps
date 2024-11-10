@@ -220,7 +220,7 @@ const MapComponent: React.FC = () => {
   };
 
   return (
-    <div className="relative w-full h-screen">
+    <div className="relative w-full h-screen overflow-clip">
       <div
         ref={mapContainerRef}
         className="absolute top-0 bottom-0 w-full h-full"
