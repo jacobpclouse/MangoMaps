@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import mapboxgl, { DataDrivenPropertyValueSpecification } from "mapbox-gl";
 import BuildingInfo from "./BuildingInfo";
+import DisasterToolbar from "./Disaster";
 
 mapboxgl.accessToken =
   "pk.eyJ1Ijoid2FuZ3duaWNvIiwiYSI6ImNtM2FoeGtzZzFkZWMycG9tendleXhna2cifQ.FyBqY-UtfsFwpqeaY0vlpw";
@@ -85,7 +86,7 @@ const MapComponent: React.FC = () => {
         map.on("click", (event) => {
           const { lng, lat } = event.lngLat;
           reverseGeocode([lng, lat]);
-
+        
           // Fly to the clicked location smoothly
           map.flyTo({
             center: [lng, lat],
@@ -220,11 +221,8 @@ const MapComponent: React.FC = () => {
 
   return (
     <div className="relative w-full h-screen">
-      <div
-        ref={mapContainerRef}
-        className="absolute top-0 bottom-0 w-full h-full"
-      />
-
+      <div ref={mapContainerRef} className="absolute top-0 bottom-0 w-full h-full" />
+      
       {!isMapLoaded ? (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-white z-50">
           <div className="w-1/2 bg-gray-200 rounded-full h-4 mb-4">
@@ -238,80 +236,27 @@ const MapComponent: React.FC = () => {
           </p>
         </div>
       ) : (
-        <div className="">
-          <div className="absolute top-0 right-0 p-4 bg-white text-black bg-opacity-70">
-            {buildingInfo ? (
-              <BuildingInfo
-                longitude={buildingInfo.lng}
-                latitude={buildingInfo.lat}
-              />
-            ) : (
-              <p className="text-black">
-                "No building found at this location."
-              </p>
-            )}
+        <>
+          <div className="fixed top-0 right-0 p-4 bg-white text-black bg-opacity-70">
+            <button onClick={toggleLayerVisibility} className="w-48 h-8">
+              Toggle Sandy Inundation Layer
+            </button>
           </div>
-          <div className="absolute bottom-0 left-0 p-4 bg-white text-black bg-opacity-70 rounded-md shadow-lg">
-            <h1 className="text-lg font-bold mb-2">Toggle Filters</h1>
-
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="sandyInundationLayer"
-                className="h-5 w-5"
-                checked={isLayerVisible}
-                onChange={toggleLayerVisibility}
-              />
-              <label htmlFor="sandyInundationLayer" className="text-sm">
-                Sandy Inundation Layer
-              </label>
-            </div>
-            {/* Energy */}
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="energy"
-                className="h-5 w-5"
-                checked={selectedFilter === "energy"}
-                onChange={() => {}}
-              />
-              <label htmlFor="energy" className="text-sm">
-                Energy
-              </label>
-            </div>
-
-            {/* Air */}
-            <div className="flex items-center space-x-2 mt-2">
-              <input
-                type="checkbox"
-                id="air"
-                className="h-5 w-5"
-                checked={selectedFilter === "air"}
-                onChange={() => {}}
-              />
-              <label htmlFor="air" className="text-sm">
-                Air
-              </label>
-            </div>
-
-            {/* Flood */}
-            <div className="flex items-center space-x-2 mt-2">
-              <input
-                type="checkbox"
-                id="air"
-                className="h-5 w-5"
-                checked={selectedFilter === "flood"}
-                onChange={() => {}}
-              />
-              <label htmlFor="air" className="text-sm">
-                Flood
-              </label>
-            </div>
+          
+          <div className="fixed bottom-20 left-1/2 transform -translate-x-1/2 p-4">
+            {isMapLoaded && <DisasterToolbar map={currMap} isMapLoaded={isMapLoaded} />}
           </div>
-        </div>
+  
+          {buildingInfo ? (
+            <BuildingInfo longitude={buildingInfo.lng} latitude={buildingInfo.lat} />
+          ) : (
+            <p className="text-black text-7xl">No building found at this location.</p>
+          )}
+        </>
       )}
     </div>
   );
+  
 };
 
 export default MapComponent;
