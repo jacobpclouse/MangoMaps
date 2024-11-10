@@ -72,6 +72,13 @@ const MapComponent: React.FC = () => {
             "fill-opacity": 0.5,
           },
         });
+
+        map.setLayoutProperty(
+          "sandy-inundation-layer",
+          "visibility",
+          isFloodVisible ? "visible" : "none"
+        );
+        
         map.addLayer({
           id: "3d-buildings",
           source: "composite",
