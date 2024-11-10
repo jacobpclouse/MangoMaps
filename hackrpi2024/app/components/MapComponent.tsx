@@ -38,7 +38,8 @@ const MapComponent: React.FC = () => {
       }, 100);
 
       map.on("load", () => {
-        fetchSolarData(40.7829, -73.9654, 5000); // Fetch solar data for NYC        
+        const apiKey = "AIzaSyA-51pZHoT-21FHrhXwzTGT-vO3rn5fByc"; // Replace with your actual API key
+        
         const defaultBuildingPaint: DataDrivenPropertyValueSpecification<string> = [
           "interpolate",
           ["linear"],
@@ -123,88 +124,7 @@ const MapComponent: React.FC = () => {
           "visibility",
           isEvacuationVisible ? "visible" : "none" // Control visibility based on the `isEvacuationVisible` variable
         );
-        
-        map.addSource('earthquakes', {
-          type: 'geojson',
-          data: "earthquake.geojson",
-          generateId: true // This ensures that all features have unique IDs
-        });
 
-        map.addLayer({
-          id: 'earthquakes-viz',
-          type: 'circle',
-          source: 'earthquakes',
-          paint: {
-            'circle-radius': [
-              'case',
-              ['boolean', ['feature-state', 'hover'], false],
-              [
-                'interpolate',
-                ['linear'],
-                ['get', 'mag'],
-                1,
-                8,
-                1.5,
-                10,
-                2,
-                12,
-                2.5,
-                14,
-                3,
-                16,
-                3.5,
-                18,
-                4.5,
-                20,
-                6.5,
-                22,
-                8.5,
-                24,
-                10.5,
-                26
-              ],
-              5
-            ],
-            'circle-stroke-color': '#000',
-            'circle-stroke-width': 1,
-            'circle-color': [
-              'case',
-              ['boolean', ['feature-state', 'hover'], false],
-              [
-                'interpolate',
-                ['linear'],
-                ['get', 'mag'],
-                1,
-                '#fff7ec',
-                1.5,
-                '#fee8c8',
-                2,
-                '#fdd49e',
-                2.5,
-                '#fdbb84',
-                3,
-                '#fc8d59',
-                3.5,
-                '#ef6548',
-                4.5,
-                '#d7301f',
-                6.5,
-                '#b30000',
-                8.5,
-                '#7f0000',
-                10.5,
-                '#000'
-              ],
-              '#000'
-            ]
-          }
-        });
-
-        map.setLayoutProperty(
-          "earthquakes-viz",
-          "visibility",
-          isEvacuationVisible ? "visible" : "none" // Control visibility based on the `isEvacuationVisible` variable
-        );
         map.addLayer({
           id: "3d-buildings",
           source: "composite",
@@ -229,23 +149,22 @@ const MapComponent: React.FC = () => {
 
         map.on("click", (event) => {
           const { lng, lat } = event.lngLat;
-
-          // Fly to the clicked location smoothly
-          map.flyTo({
-            center: [lng, lat],
-            zoom: 18,
-            pitch: 40,
-            bearing: -10,
-            speed: 0.8,
-            curve: 1,
-            easing: (t) => t * (2 - t), // Smooth easing
-          });
-
+          
           const features = map.queryRenderedFeatures(map.project([lng, lat]), {
             layers: ["3d-buildings"],
           });
 
           if (features.length > 0) {
+            // Fly to the clicked location smoothly
+            map.flyTo({
+              center: [lng, lat],
+              zoom: 18,
+              pitch: 40,
+              bearing: -10,
+              speed: 0.8,
+              curve: 1,
+              easing: (t) => t * (2 - t), // Smooth easing
+            });
             const building = features[0];
             const buildingId = building.id as number;
             console.log(building);
@@ -347,28 +266,6 @@ const MapComponent: React.FC = () => {
     }
   };
   
-  const [isEarthquakeVisible, setIsEarthquakeVisible] = useState<boolean>(false);
-  const toggleEarthquakeVisibility = () => {
-    if (currMap) {
-      const newVisibility = isEarthquakeVisible ? "none" : "visible";
-      currMap.setLayoutProperty(
-        "earthquakes-viz",
-        "visibility",
-        newVisibility
-      );
-      setIsEarthquakeVisible(!isEarthquakeVisible);
-    }
-  };
-  
-  // const [isEnergyVisible, setIsEnergyVisible] = useState<boolean>(false);
-  // const toggleEnergyVisibility = () => {
-  //   if (currMap) {
-  //     console.log("Energy layer toggled");
-  //     setIsEnergyVisible(!isEnergyVisible);
-  //   }
-  // }
-
-  
 
   const fetchAirQualityData = async () => {
     try {
@@ -413,7 +310,6 @@ const MapComponent: React.FC = () => {
 
       const airQualityData = await Promise.all(airQualityDataPromises);
   
-
       const updatedGeoJson = {
         ...zipCodeGeoJson,
         features: airQualityData,
@@ -497,101 +393,6 @@ const MapComponent: React.FC = () => {
   };
 
   
-
-  // Function to fetch solar data from Google Solar API
-  const fetchSolarData = async (latitude: number, longitude: number, radius: number) => {
-    const apiKey = "AIzaSyA-51pZHoT-21FHrhXwzTGT-vO3rn5fByc"; // Replace with your actual API key
-    const url = `https://solar.googleapis.com/v1/dataLayers:get?key=${apiKey}`;
-
-    const params = {
-      lat: latitude,
-      lng: longitude,
-      radius: radius,
-      data: 'DSM,RGB,mask,annual_flux,monthly_flux', // Specify the data layers you need
-      min_quality: 'HIGH', // Optional: specify the minimum quality
-      min_scale: 1, // Optional: specify the minimum scale in meters per pixel
-    };
-
-    try {
-      const response = await axios.get(url, { params });
-      console.log('Solar data response:', response.data); // Log the response for debugging
-      const solarData = response.data;
-      // Log the response to see if it contains the data
-      console.log('Solar data:', solarData);
-
-      // Check if the DSM URL exists
-      if (solarData.dsmUrl) {
-        console.log('DSM URL:', solarData.dsmUrl);
-      } else {
-        console.error('DSM URL not available');
-      }
-
-
-      // Call the process function to handle GeoTIFF URLs
-      processGeoTIFF(solarData.dsmUrl); // You can choose which data to display (e.g., dsmUrl)
-    } catch (error) {
-      const err = error as any;
-      console.error("Error fetching solar data:", err.response?.data || err.message);
-    }
-  };
-
-  // Function to process GeoTIFF data (Digital Surface Model)
-  const processGeoTIFF = async (url: string) => {
-    try {
-      const arrayBuffer = await fetch(url).then((res) => res.arrayBuffer());
-      const tiff = await fromArrayBuffer(arrayBuffer);
-      const image = await tiff.getImage();
-      const data = await image.readRasters();
-      
-      // Example: you might process DSM (Digital Surface Model) data here
-      const dsmData = data[0];
-
-      // For example, visualize it as a raster layer on the map
-      addRasterLayer(dsmData);
-    } catch (error) {
-      console.error("Error processing GeoTIFF data:", error);
-    }
-  };
-
-  // Function to add raster layer to Mapbox map
-  const addRasterLayer = (dsmData: any) => {
-    if (currMap) {
-      currMap.addSource("solar-raster", {
-        type: "image",
-        url: dsmData, // GeoTIFF data URL or processed image data
-        coordinates: [
-          [-74.021, 40.6981],
-          [-73.8655, 40.6981],
-          [-73.8655, 40.9153],
-          [-74.021, 40.9153],
-        ],
-      });
-
-      currMap.addLayer({
-        id: "solar-raster-layer",
-        type: "raster",
-        source: "solar-raster",
-        paint: {
-          "raster-opacity": 0.8,
-        },
-      });
-    }
-  };
-
-  // Toggle Solar Layer Visibility
-  const toggleSolarVisibility = () => {
-    if (currMap) {
-      const newVisibility = isSolarVisible ? "none" : "visible";
-
-      if (currMap.getLayer("solar-raster-layer")) {
-        currMap.setLayoutProperty("solar-raster-layer", "visibility", newVisibility);
-      }
-
-      setIsSolarVisible(!isSolarVisible);
-    }
-  };
-  
-  
   return (
     <div className="relative w-full h-screen overflow-clip">
       <div
@@ -667,33 +468,6 @@ const MapComponent: React.FC = () => {
                 Evacuation
               </label>
             </div>
-            {/* Earthquake Visibility */}
-          <div className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              id="earthquakeLayer"
-              className="h-5 w-5"
-              checked={isEarthquakeVisible}
-              onChange={toggleEarthquakeVisibility}
-            />
-            <label htmlFor="earthquakeLayer" className="text-sm">
-              Earthquake
-            </label>
-          </div>
-            {/* Solar */}
-            <div className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              id="pollenLayer"
-              className="h-5 w-5"
-              checked={isSolarVisible}
-              onChange={toggleSolarVisibility}
-            />
-            <label htmlFor="pollenLayer" className="text-sm">
-              Solar
-            </label>
-          </div>
-
             {/* Air */}
             <div className="flex items-center space-x-2">
               <input
@@ -704,7 +478,7 @@ const MapComponent: React.FC = () => {
                 onChange={toggleAirVisibility}
               />
               <label htmlFor="air" className="text-sm">
-                Air
+                Air Quality 💨
               </label>
             </div>
           </div>

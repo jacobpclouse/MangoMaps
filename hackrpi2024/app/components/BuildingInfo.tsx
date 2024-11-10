@@ -42,7 +42,7 @@ const BuildingInfo: React.FC<BuildingInfoProps> = ({ latitude, longitude }) => {
         const data = await response.json();
         setBuildingInfo(data);
       } catch (err) {
-        setError('Click on a building to view more information');
+        setError('Select A Building To View Details');
       }
     };
 
