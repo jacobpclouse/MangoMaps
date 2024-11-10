@@ -39,7 +39,7 @@ const MapComponent: React.FC = () => {
                 'filter': ['==', 'extrude', 'true'],
                 'type': 'fill-extrusion',
                 'minzoom': 15,
-                'maxzoom': 22,
+                'maxzoom': 20,
                 'paint': {
                     'fill-extrusion-color': [
                         'interpolate',
@@ -96,7 +96,7 @@ const MapComponent: React.FC = () => {
                 setLoadingProgress(100);
                 setIsMapLoaded(true);
             });
-
+            
             map.on('click', (event) => {
                 const { lng, lat } = event.lngLat;
                 reverseGeocode([lng, lat]);
@@ -105,13 +105,13 @@ const MapComponent: React.FC = () => {
                     zoom: 18,
                     pitch: 40,
                     bearing: -10,
-                    speed: 1.2, // Make the transition smooth
-                    curve: 1, // Make the transition smooth
-                    easing: (t) => t, // Linear easing
-                });
+                    speed: 0.8, // Lower speed for a smoother transition
+                    curve: 1,   // Maintain smoothness
+                    easing: (t) => t * (2 - t), // More natural easing
+                });                
                 findBuildingAtCoordinates([lng, lat]);
             });
-        });
+        }); 
 
         const reverseGeocode = async (coordinates: [number, number]) => {
             const [longitude, latitude] = coordinates;
@@ -169,13 +169,14 @@ const MapComponent: React.FC = () => {
             <div ref={mapContainerRef} className="absolute top-0 bottom-0 w-full h-full" />
 
             {!isMapLoaded ? (
-                <div className="absolute inset-0 flex items-center justify-center bg-white z-50">
-                    <div className="w-1/2 bg-gray-200 rounded-full h-4">
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-white z-50">
+                    <div className="w-1/2 bg-gray-200 rounded-full h-4 mb-4">
                         <div
                             className="bg-blue-500 h-4 rounded-full"
                             style={{ width: `${loadingProgress}%` }}
                         />
                     </div>
+                    <p className="text-lg font-semibold text-black">Loading map... {loadingProgress}%</p>
                 </div>
             ) : (
                 <div className="absolute top-0 right-0 p-4 bg-white text-black bg-opacity-70">
