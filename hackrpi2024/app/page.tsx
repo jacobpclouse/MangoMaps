@@ -8,12 +8,12 @@ import { ArrowRightIcon } from "lucide-react";
 
 const App: React.FC = () => {
   return (
-    <div className="relative flex flex-col items-center justify-center max-w-[100rem] mx-auto ">
-      <div className="bg-[#CBC3E3] absolute top-[18rem]  -z-10 right-[-18rem] h-[60rem] w-[60rem] rounded-full blur-[10rem]  "></div>
+    <div className="relative flex flex-col items-center justify-center max-w-[100rem] mx-auto h-screen overflow-y-clip">
+      <div className="bg-[#CBC3E3] absolute top-[18rem] -z-10 right-[-18rem] h-[60rem] w-[60rem] rounded-full blur-[10rem]  "></div>
 
       <div className="bg-[#f59996] absolute top-[-28rem] -z-10 left-[-22rem] h-[73rem] w-[73rem] rounded-full blur-[10rem] "></div>
 
-      <div className="flex gap-0 md:gap-3 items-center justify-center mt-[14rem] md:mt-[16rem] px-12">
+      <div className="flex gap-0 md:gap-3 items-center justify-center  px-12">
         <Image
           src="/MangoPair.png"
           alt="MangoMaps logo"
