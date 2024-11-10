@@ -6,7 +6,6 @@ mapboxgl.accessToken =
   "pk.eyJ1Ijoid2FuZ3duaWNvIiwiYSI6ImNtM2FoeGtzZzFkZWMycG9tendleXhna2cifQ.FyBqY-UtfsFwpqeaY0vlpw";
 
 const MapComponent: React.FC = () => {
-  const mapContainerRef = useRef<HTMLDivElement>(null);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
 
@@ -18,192 +17,197 @@ const MapComponent: React.FC = () => {
   );
   const [address, setAddress] = useState<string | null>(null);
   const [buildingInfo, setBuildingInfo] = useState<any | null>(null);
+  const mapContainerRef = useRef<HTMLDivElement | null>(null);
+  const [currMap, setCurrMap] = useState<mapboxgl.Map | null>(null);
+  const [isLayerVisible, setIsLayerVisible] = useState<boolean>(true);
 
   useEffect(() => {
-    const map = new mapboxgl.Map({
-      container: mapContainerRef.current!,
-      style: "mapbox://styles/wangwnico/cm3ap0v5w00iv01qsb2d7hqfg",
-      center: [-73.9654, 40.7829], // Centered on NYC
-      zoom: 16,
-      pitch: 60,
-      bearing: -10,
-      maxBounds: bounds,
-    });
-
-    const interval = setInterval(() => {
-      setLoadingProgress((prev) => (prev < 95 ? prev + 5 : prev));
-    }, 100);
-
-    map.on("load", () => {
-      map.addLayer({
-        id: "3d-buildings",
-        source: "composite",
-        "source-layer": "building",
-        filter: ["==", "extrude", "true"],
-        type: "fill-extrusion",
-        minzoom: 15,
-        maxzoom: 20,
-        paint: {
-          "fill-extrusion-color": [
-            "interpolate",
-            ["linear"],
-            ["get", "height"],
-            0,
-            "#E3F2FD",
-            20,
-            "#BBDEFB",
-            40,
-            "#90CAF9",
-            60,
-            "#64B5F6",
-            80,
-            "#42A5F5",
-            100,
-            "#2196F3",
-            150,
-            "#1E88E5",
-            200,
-            "#1976D2",
-            250,
-            "#1565C0",
-          ],
-          "fill-extrusion-height": ["get", "height"],
-          "fill-extrusion-base": ["get", "min_height"],
-          "fill-extrusion-opacity": 0.6,
-        },
+    if (mapContainerRef.current && !currMap) {
+      const map = new mapboxgl.Map({
+        container: mapContainerRef.current!,
+        style: "mapbox://styles/wangwnico/cm3ap0v5w00iv01qsb2d7hqfg",
+        center: [-73.9654, 40.7829], // Centered on NYC
+        zoom: 16,
+        pitch: 60,
+        bearing: -10,
+        maxBounds: bounds,
       });
 
-      map.once("idle", () => {
-        clearInterval(interval);
-        setLoadingProgress(100);
-        setIsMapLoaded(true);
-      });
+      const interval = setInterval(() => {
+        setLoadingProgress((prev) => (prev < 95 ? prev + 5 : prev));
+      }, 100);
 
-      map.on("click", (event) => {
-        const { lng, lat } = event.lngLat;
-        reverseGeocode([lng, lat]);
-
-        // Fly to the clicked location smoothly
-        map.flyTo({
-          center: [lng, lat],
-          zoom: 18,
-          pitch: 40,
-          bearing: -10,
-          speed: 0.8,
-          curve: 1,
-          easing: (t) => t * (2 - t), // Smooth easing
+      map.on("load", () => {
+        map.addLayer({
+          id: "3d-buildings",
+          source: "composite",
+          "source-layer": "building",
+          filter: ["==", "extrude", "true"],
+          type: "fill-extrusion",
+          minzoom: 15,
+          maxzoom: 20,
+          paint: {
+            "fill-extrusion-color": [
+              "interpolate",
+              ["linear"],
+              ["get", "height"],
+              0,
+              "#E3F2FD",
+              20,
+              "#BBDEFB",
+              40,
+              "#90CAF9",
+              60,
+              "#64B5F6",
+              80,
+              "#42A5F5",
+              100,
+              "#2196F3",
+              150,
+              "#1E88E5",
+              200,
+              "#1976D2",
+              250,
+              "#1565C0",
+            ],
+            "fill-extrusion-height": ["get", "height"],
+            "fill-extrusion-base": ["get", "min_height"],
+            "fill-extrusion-opacity": 0.6,
+          },
         });
 
-        const features = map.queryRenderedFeatures(map.project([lng, lat]), {
-          layers: ["3d-buildings"],
+        map.once("idle", () => {
+          clearInterval(interval);
+          setLoadingProgress(100);
+          setIsMapLoaded(true);
         });
 
-        if (features.length > 0) {
-          const building = features[0];
-          const buildingId = building.id as number;
-          console.log(building);
-          setBuildingInfo({
-            id: building.id,
-            height: building.properties!.height,
-            lng: lng,
-            lat: lat,
+        map.on("click", (event) => {
+          const { lng, lat } = event.lngLat;
+          reverseGeocode([lng, lat]);
+
+          // Fly to the clicked location smoothly
+          map.flyTo({
+            center: [lng, lat],
+            zoom: 18,
+            pitch: 40,
+            bearing: -10,
+            speed: 0.8,
+            curve: 1,
+            easing: (t) => t * (2 - t), // Smooth easing
           });
-          // buildingId} Height: ${building.properties!.height}`);
-          setSelectedBuildingId(buildingId);
 
-          // Disable extrusion from the 3d-buildings layer
-          map.setPaintProperty(
-            "3d-buildings",
-            "fill-extrusion-color",
-            "rgba(0, 0, 0, 0)"
-          ); // Make extrusion invisible
-          map.setPaintProperty("3d-buildings", "fill-extrusion-height", 0); // Set extrusion height to 0
+          const features = map.queryRenderedFeatures(map.project([lng, lat]), {
+            layers: ["3d-buildings"],
+          });
 
-          // Remove the existing highlight layer if it exists
-          if (map.getLayer("highlighted-building-layer")) {
-            map.removeLayer("highlighted-building-layer");
-            map.removeSource("highlighted-building-source");
+          if (features.length > 0) {
+            const building = features[0];
+            const buildingId = building.id as number;
+            console.log(building);
+            setBuildingInfo({
+              id: building.id,
+              height: building.properties!.height,
+              lng: lng,
+              lat: lat,
+            });
+            // buildingId} Height: ${building.properties!.height}`);
+            setSelectedBuildingId(buildingId);
+
+            // Disable extrusion from the 3d-buildings layer
+            map.setPaintProperty(
+              "3d-buildings",
+              "fill-extrusion-color",
+              "rgba(0, 0, 0, 0)"
+            ); // Make extrusion invisible
+            map.setPaintProperty("3d-buildings", "fill-extrusion-height", 0); // Set extrusion height to 0
+
+            // Remove the existing highlight layer if it exists
+            if (map.getLayer("highlighted-building-layer")) {
+              map.removeLayer("highlighted-building-layer");
+              map.removeSource("highlighted-building-source");
+            }
+
+            // Create a new source with only the selected building
+            map.addSource("highlighted-building-source", {
+              type: "geojson",
+              data: {
+                type: "FeatureCollection",
+                features: [building], // Add only the selected building
+              },
+            });
+
+            // Add a new layer to highlight the selected building
+            map.addLayer({
+              id: "highlighted-building-layer",
+              type: "fill-extrusion",
+              source: "highlighted-building-source",
+              paint: {
+                "fill-extrusion-color": "#00FF00", // Highlight with green color
+                "fill-extrusion-height": ["get", "height"],
+                "fill-extrusion-base": ["get", "min_height"],
+                "fill-extrusion-opacity": 0.8,
+              },
+            });
+          } else {
+            setBuildingInfo("No building found at this location.");
+
+            // Clear selection by removing the highlighted building layer
+            setSelectedBuildingId(null);
+            if (map.getLayer("highlighted-building-layer")) {
+              map.removeLayer("highlighted-building-layer");
+              map.removeSource("highlighted-building-source");
+            }
+
+            // Restore extrusion for all buildings
+            map.setPaintProperty("3d-buildings", "fill-extrusion-color", [
+              "interpolate",
+              ["linear"],
+              ["get", "height"],
+              0,
+              "#E3F2FD",
+              20,
+              "#BBDEFB",
+              40,
+              "#90CAF9",
+              60,
+              "#64B5F6",
+              80,
+              "#42A5F5",
+              100,
+              "#2196F3",
+              150,
+              "#1E88E5",
+              200,
+              "#1976D2",
+              250,
+              "#1565C0",
+            ]); // Restore color based on height
+            map.setPaintProperty("3d-buildings", "fill-extrusion-height", [
+              "get",
+              "height",
+            ]); // Restore extrusion height
           }
+        });
 
-          // Create a new source with only the selected building
-          map.addSource("highlighted-building-source", {
-            type: "geojson",
-            data: {
-              type: "FeatureCollection",
-              features: [building], // Add only the selected building
-            },
-          });
-
-          // Add a new layer to highlight the selected building
-          map.addLayer({
-            id: "highlighted-building-layer",
-            type: "fill-extrusion",
-            source: "highlighted-building-source",
-            paint: {
-              "fill-extrusion-color": "#00FF00", // Highlight with green color
-              "fill-extrusion-height": ["get", "height"],
-              "fill-extrusion-base": ["get", "min_height"],
-              "fill-extrusion-opacity": 0.8,
-            },
-          });
-        } else {
-          setBuildingInfo("No building found at this location.");
-
-          // Clear selection by removing the highlighted building layer
-          setSelectedBuildingId(null);
-          if (map.getLayer("highlighted-building-layer")) {
-            map.removeLayer("highlighted-building-layer");
-            map.removeSource("highlighted-building-source");
-          }
-
-          // Restore extrusion for all buildings
-          map.setPaintProperty("3d-buildings", "fill-extrusion-color", [
-            "interpolate",
-            ["linear"],
-            ["get", "height"],
-            0,
-            "#E3F2FD",
-            20,
-            "#BBDEFB",
-            40,
-            "#90CAF9",
-            60,
-            "#64B5F6",
-            80,
-            "#42A5F5",
-            100,
-            "#2196F3",
-            150,
-            "#1E88E5",
-            200,
-            "#1976D2",
-            250,
-            "#1565C0",
-          ]); // Restore color based on height
-          map.setPaintProperty("3d-buildings", "fill-extrusion-height", [
-            "get",
-            "height",
-          ]); // Restore extrusion height
-          
-        }
-      });
-      
-      map.addSource('sandy-inundation', {
-        type: 'geojson',
-        data: '/sandy_inundation.geojson',
+        map.addSource("sandy-inundation", {
+          type: "geojson",
+          data: "/sandy_inundation.geojson",
         });
 
         map.addLayer({
-            id: 'sandy-inundation-layer',
-            type: 'fill',
-            source: 'sandy-inundation',
-            paint: {
-                'fill-color': '#00008B', // Dark blue color for inundation areas
-                'fill-opacity': 0.5,
-            },
+          id: "sandy-inundation-layer",
+          type: "fill",
+          source: "sandy-inundation",
+          paint: {
+            "fill-color": "#00008B", // Dark blue color for inundation areas
+            "fill-opacity": 0.5,
+          },
         });
-    });
+      });
 
+      setCurrMap(map);
+    }
     const reverseGeocode = async (coordinates: [number, number]) => {
       const [longitude, latitude] = coordinates;
       const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${longitude},${latitude}.json?access_token=${mapboxgl.accessToken}`;
@@ -224,8 +228,20 @@ const MapComponent: React.FC = () => {
       }
     };
 
-    return () => map.remove();
-  }, []); // Depend on updateTrigger to re-render when it changes
+    return () => currMap?.remove();
+  }, [currMap]); // Depend on updateTrigger to re-render when it changes
+
+  const toggleLayerVisibility = () => {
+    if (currMap) {
+      const newVisibility = isLayerVisible ? "none" : "visible";
+      currMap.setLayoutProperty(
+        "sandy-inundation-layer",
+        "visibility",
+        newVisibility
+      );
+      setIsLayerVisible(!isLayerVisible);
+    }
+  };
 
   return (
     <div className="relative w-full h-screen">
@@ -248,14 +264,18 @@ const MapComponent: React.FC = () => {
         </div>
       ) : (
         <div className="absolute top-0 right-0 p-4 bg-white text-black bg-opacity-70">
-          
+          <button onClick={toggleLayerVisibility} className="w-12 h-8">
+            Toggle Sandy Inundation Layer
+          </button>
           {buildingInfo ? (
             <BuildingInfo
               longitude={buildingInfo.lng}
               latitude={buildingInfo.lat}
             />
           ) : (
-            <p className="text-black text-7xl">"No building found at this location."</p>
+            <p className="text-black text-7xl">
+              "No building found at this location."
+            </p>
           )}
         </div>
       )}
