@@ -1,11 +1,22 @@
 import { NextResponse } from 'next/server';
+import energy from '../../../public/building_energy_data.json';
+
+const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+  const dLat = lat2 - lat1;
+  const dLon = lon2 - lon1;
+
+  // Calculate Euclidean distance (ignoring Earth curvature, assuming flat 2D space)
+  const distance = Math.sqrt(dLat * dLat + dLon * dLon);
+
+  return distance;
+};
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const latitude = searchParams.get('latitude');
   const longitude = searchParams.get('longitude');
   
-  if (!latitude || !longitude) {
+  if (!latitude || !longitude || latitude === 'undefined' || longitude === 'undefined') {
     return NextResponse.json({ error: 'Latitude and longitude are required' }, { status: 400 });
   }
 
@@ -13,7 +24,7 @@ export async function GET(req: Request) {
 
   try {
     const response = await fetch(
-      `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&radius=1000&type=premise&key=${apiKey}`
+      `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&radius=50&key=${apiKey}`
     );
 
     if (!response.ok) {
@@ -21,21 +32,47 @@ export async function GET(req: Request) {
     }
 
     const data = await response.json();
-    
-    // Optionally fetch details for each place
-    const placesWithDetails = await Promise.all(
-      data.results.map(async (place: any) => {
-        const placeDetailsResponse = await fetch(
-          `https://maps.googleapis.com/maps/api/place/details/json?place_id=${place.place_id}&key=${apiKey}`
+
+    const places = data.results;
+
+    if (places.length > 0) {
+      const sortedPlaces = places.map((place: any) => {
+        const distance = calculateDistance(
+          Number(latitude),
+          Number(longitude),
+          place.geometry.location.lat,
+          place.geometry.location.lng
         );
-        const placeDetails = await placeDetailsResponse.json();
-        return { ...place, details: placeDetails.result };
-      })
-    );
-    
-    return NextResponse.json(placesWithDetails);
+        return { ...place, distance };
+      }).sort((a: any, b: any) => a.distance - b.distance);
+
+      const match = energy.find((match: any) => match.addr.toLowerCase() === sortedPlaces[0].vicinity.toLowerCase());
+      if (match) {
+        sortedPlaces[0].energy = energy[match.id].grade;
+      }
+
+      if (sortedPlaces[0].photos) {
+        try {
+          const photoResponse = await fetch(`https://maps.googleapis.com/maps/api/place/photo?maxheight=500&maxwidth=500&photo_reference=${sortedPlaces[0].photos[0].photo_reference}&key=${apiKey}`);
+          if (!photoResponse.ok) {
+            throw new Error(`Failed to fetch: ${photoResponse.statusText}`);
+          }
+          
+          sortedPlaces[0].photoURL = photoResponse.url;
+          return NextResponse.json(sortedPlaces[0]);
+        } catch (error) {
+          //console.error(error);
+          return NextResponse.json({ error: 'Failed to fetch photo information' }, { status: 500 });
+        }
+      }
+
+      return NextResponse.json(sortedPlaces[0]);
+
+    } else {
+      throw new Error(`Failed to fetch: ${response.statusText}`);
+    }
   } catch (error) {
-    console.error(error);
+    //console.error(error);
     return NextResponse.json({ error: 'Failed to fetch building information' }, { status: 500 });
   }
 }

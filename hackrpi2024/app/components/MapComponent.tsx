@@ -230,13 +230,13 @@ const MapComponent: React.FC = () => {
     }
   };
   
-  const [isEnergyVisible, setIsEnergyVisible] = useState<boolean>(false);
-  const toggleEnergyVisibility = () => {
-    if (currMap) {
-      console.log("Energy layer toggled");
-      setIsEnergyVisible(!isEnergyVisible);
-    }
-  }
+  // const [isEnergyVisible, setIsEnergyVisible] = useState<boolean>(false);
+  // const toggleEnergyVisibility = () => {
+  //   if (currMap) {
+  //     console.log("Energy layer toggled");
+  //     setIsEnergyVisible(!isEnergyVisible);
+  //   }
+  // }
 
   
 
@@ -414,7 +414,7 @@ const MapComponent: React.FC = () => {
                 Flood
               </label>
             </div>
-            {/* Energy */}
+            {/* Energy
             <div className="flex items-center space-x-2">
               <input
                 type="checkbox"
@@ -426,7 +426,7 @@ const MapComponent: React.FC = () => {
               <label htmlFor="energy" className="text-sm">
                 Energy
               </label>
-            </div>
+            </div> */}
 
             {/* Air */}
             <div className="flex items-center space-x-2">
