@@ -56,7 +56,7 @@ const DisasterToolbar: React.FC<DisasterToolbarProps> = ({ map, isMapLoaded }) =
     setActiveDisaster(null);
   };
 
-  const handleMapClick = (e) => {
+  const handleMapClick = (e: any) => {
     if (!isAnalysisMode || !activeDisaster) return;
   
     const { lng, lat } = e.lngLat;
