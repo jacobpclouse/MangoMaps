@@ -5,29 +5,7 @@ import BuildingInfo from "./BuildingInfo";
 mapboxgl.accessToken =
   "pk.eyJ1Ijoid2FuZ3duaWNvIiwiYSI6ImNtM2FoeGtzZzFkZWMycG9tendleXhna2cifQ.FyBqY-UtfsFwpqeaY0vlpw";
 
-const defaultBuildingPaint: DataDrivenPropertyValueSpecification<string> = [
-  "interpolate",
-  ["linear"],
-  ["get", "height"],
-  0,
-  "#E3F2FD",
-  20,
-  "#BBDEFB",
-  40,
-  "#90CAF9",
-  60,
-  "#64B5F6",
-  80,
-  "#42A5F5",
-  100,
-  "#2196F3",
-  150,
-  "#1E88E5",
-  200,
-  "#1976D2",
-  250,
-  "#1565C0",
-]
+
 const MapComponent: React.FC = () => {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
@@ -62,6 +40,29 @@ const MapComponent: React.FC = () => {
       }, 100);
 
       map.on("load", () => {
+        const defaultBuildingPaint: DataDrivenPropertyValueSpecification<string> = [
+          "interpolate",
+          ["linear"],
+          ["get", "height"],
+          0,
+          "#E3F2FD",
+          20,
+          "#BBDEFB",
+          40,
+          "#90CAF9",
+          60,
+          "#64B5F6",
+          80,
+          "#42A5F5",
+          100,
+          "#2196F3",
+          150,
+          "#1E88E5",
+          200,
+          "#1976D2",
+          250,
+          "#1565C0",
+        ]
         map.addLayer({
           id: "3d-buildings",
           source: "composite",
