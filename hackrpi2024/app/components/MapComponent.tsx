@@ -79,6 +79,15 @@ const MapComponent: React.FC = () => {
             map.on('click', (event) => {
                 const { lng, lat } = event.lngLat;
                 reverseGeocode([lng, lat]);
+                map.flyTo({
+                    center: [lng, lat],
+                    zoom: 18,
+                    pitch: 40,
+                    bearing: -10,
+                    speed: 1.2, // Make the transition smooth
+                    curve: 1, // Make the transition smooth
+                    easing: (t) => t, // Linear easing
+                });
                 
                 const features = map.queryRenderedFeatures(
                     map.project([lng, lat]),
