@@ -60,6 +60,9 @@ const BuildingInfo: React.FC<BuildingInfoProps> = ({ latitude, longitude }) => {
               </div>
             )}
             <p><strong>Place Type:</strong> {buildingInfo.types.join(', ')}</p>
+            {buildingInfo.grade && (
+              <p><strong>Energy Score:</strong> {buildingInfo.grade}</p>
+            )}
           </div>
         </div>
       ) : (

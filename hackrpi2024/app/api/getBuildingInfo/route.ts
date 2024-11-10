@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import energy from '../../../public/building_energy_data.json';
 
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
   const dLat = lat2 - lat1;
@@ -23,7 +24,7 @@ export async function GET(req: Request) {
 
   try {
     const response = await fetch(
-      `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&radius=100&key=${apiKey}`
+      `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&radius=50&key=${apiKey}`
     );
 
     if (!response.ok) {
@@ -45,6 +46,10 @@ export async function GET(req: Request) {
         return { ...place, distance };
       }).sort((a: any, b: any) => a.distance - b.distance);
 
+      const match = energy.find((match: any) => match.addr.toLowerCase() === sortedPlaces[0].vicinity.toLowerCase());
+      if (match) {
+        sortedPlaces[0].energy = energy[match.id].grade;
+      }
 
       if (sortedPlaces[0].photos) {
         try {
