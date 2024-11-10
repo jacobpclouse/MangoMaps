@@ -409,9 +409,6 @@ const MapComponent: React.FC = () => {
       console.error('Error fetching air quality data:', error);
     }
   };
-
-
-
   
   return (
     <div className="relative w-full h-screen overflow-clip">
@@ -433,7 +430,7 @@ const MapComponent: React.FC = () => {
               />
             ) : (
               <p className="text-black">
-                No building found at this location.
+                Select Building to Display Information
               </p>
             )}
           </div>
