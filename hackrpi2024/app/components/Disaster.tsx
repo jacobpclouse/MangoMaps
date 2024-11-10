@@ -80,112 +80,117 @@ const DisasterToolbar: React.FC<DisasterToolbarProps> = ({
       essential: true, // this animation is considered essential with respect to prefers-reduced-motion
     });
 
-    if (activeDisaster === "nuclear") {
-      const center = [lng, lat];
-      const innerRadius = 610; // 610 meters
-      const outerRadius = 1220; // 1220 meters
+    const center = [lng, lat];
+    let innerRadius = 0;
+    let outerRadius = 0;
+    if (activeDisaster === "Nuke") {
+      innerRadius = 610; // 610 meters
+      outerRadius = 1220; // 1220 meters
+    } else if (activeDisaster === "Big Nuke") {
+      innerRadius = 1220; // 1220 meters
+      outerRadius = 2440; // 2440 meters
+    }
 
-      const innerCircle = {
-        type: "Feature",
-        geometry: { type: "Point", coordinates: center },
-        properties: { radius: innerRadius },
-      };
+    const innerCircle = {
+      type: "Feature",
+      geometry: { type: "Point", coordinates: center },
+      properties: { radius: innerRadius },
+    };
 
-      const outerCircle = {
-        type: "Feature",
-        geometry: { type: "Point", coordinates: center },
-        properties: { radius: outerRadius },
-      };
+    const outerCircle = {
+      type: "Feature",
+      geometry: { type: "Point", coordinates: center },
+      properties: { radius: outerRadius },
+    };
 
-      if (map.getLayer("blast-radius")) {
-        map.removeLayer("blast-radius");
-      }
-      if (map.getSource("blast-radius")) {
-        map.removeSource("blast-radius");
-      }
+    if (map.getLayer("blast-radius")) {
+      map.removeLayer("blast-radius");
+    }
+    if (map.getSource("blast-radius")) {
+      map.removeSource("blast-radius");
+    }
 
-      if (map.getLayer("outer-blast-radius")) {
-        map.removeLayer("outer-blast-radius");
-      }
-      if (map.getSource("outer-blast-radius")) {
-        map.removeSource("outer-blast-radius");
-      }
+    if (map.getLayer("outer-blast-radius")) {
+      map.removeLayer("outer-blast-radius");
+    }
+    if (map.getSource("outer-blast-radius")) {
+      map.removeSource("outer-blast-radius");
+    }
 
-      map.addSource("blast-radius", {
-        type: "geojson",
-        data: innerCircle,
-      });
+    map.addSource("blast-radius", {
+      type: "geojson",
+      data: innerCircle,
+    });
 
-      map.addSource("outer-blast-radius", {
-        type: "geojson",
-        data: outerCircle,
-      });
+    map.addSource("outer-blast-radius", {
+      type: "geojson",
+      data: outerCircle,
+    });
 
-      map.addLayer({
-        id: "blast-radius",
-        type: "circle",
-        source: "blast-radius",
-        paint: {
-          "circle-radius": {
-            stops: [
-              [0, 0],
-              [20, innerRadius / 0.075],
-            ],
-            base: 2,
-          },
-          "circle-color": "#FF0000",
-          "circle-opacity": 0.5,
-          "circle-stroke-width": 2,
-          "circle-stroke-color": "#FF0000",
-        },
-      });
-
-      map.addLayer({
-        id: "outer-blast-radius",
-        type: "circle",
-        source: "outer-blast-radius",
-        paint: {
-          "circle-radius": {
-            stops: [
-              [0, 0],
-              [20, outerRadius / 0.075],
-            ],
-            base: 2,
-          },
-          "circle-color": "#FFA500",
-          "circle-opacity": 0.3,
-          "circle-stroke-width": 2,
-          "circle-stroke-color": "#FFA500",
-        },
-      });
-
-      const bounds = [
-        [lng - outerRadius / 111000, lat - outerRadius / 111000],
-        [lng + outerRadius / 111000, lat + outerRadius / 111000],
-      ];
-
-      const features = map.queryRenderedFeatures(bounds, {
-        layers: ["3d-buildings"],
-      });
-
-      if (features.length > 0) {
-        const affectedBuildings = features.map((feature: any) => feature.id);
-
-        map.setPaintProperty("3d-buildings", "fill-extrusion-color", [
-          "case",
-          ["in", ["id"], ["literal", affectedBuildings]],
-          "#FF4444",
-          [
-            "interpolate",
-            ["linear"],
-            ["get", "height"],
-            0,
-            "#E3F2FD",
-            250,
-            "#1565C0",
+    map.addLayer({
+      id: "blast-radius",
+      type: "circle",
+      source: "blast-radius",
+      paint: {
+        "circle-radius": {
+          stops: [
+            [0, 0],
+            [20, innerRadius / 0.075],
           ],
-        ]);
-      }
+          base: 2,
+        },
+        "circle-color": "#FF0000",
+        "circle-opacity": 0.5,
+        "circle-stroke-width": 2,
+        "circle-stroke-color": "#FF0000",
+      },
+    });
+
+    map.addLayer({
+      id: "outer-blast-radius",
+      type: "circle",
+      source: "outer-blast-radius",
+      paint: {
+        "circle-radius": {
+          stops: [
+            [0, 0],
+            [20, outerRadius / 0.075],
+          ],
+          base: 2,
+        },
+        "circle-color": "#FFA500",
+        "circle-opacity": 0.3,
+        "circle-stroke-width": 2,
+        "circle-stroke-color": "#FFA500",
+      },
+    });
+
+    const bounds = [
+      [lng - outerRadius / 111000, lat - outerRadius / 111000],
+      [lng + outerRadius / 111000, lat + outerRadius / 111000],
+    ];
+
+    const features = map.queryRenderedFeatures(bounds, {
+      layers: ["3d-buildings"],
+    });
+
+    if (features.length > 0) {
+      const affectedBuildings = features.map((feature: any) => feature.id);
+
+      map.setPaintProperty("3d-buildings", "fill-extrusion-color", [
+        "case",
+        ["in", ["id"], ["literal", affectedBuildings]],
+        "#FF4444",
+        [
+          "interpolate",
+          ["linear"],
+          ["get", "height"],
+          0,
+          "#E3F2FD",
+          250,
+          "#1565C0",
+        ],
+      ]);
     }
   };
 
@@ -320,7 +325,7 @@ const DisasterToolbar: React.FC<DisasterToolbarProps> = ({
           }}
         >
           <button
-            onClick={() => activateDisasterTool("nuclear")}
+            onClick={() => activateDisasterTool("Nuke")}
             style={{
               display: "flex",
               alignItems: "center",
@@ -330,12 +335,29 @@ const DisasterToolbar: React.FC<DisasterToolbarProps> = ({
               borderRadius: "0.25rem",
               cursor: "pointer",
               backgroundColor:
-                activeDisaster === "nuclear" ? "#ff4444" : "#fff",
-              color: activeDisaster === "nuclear" ? "#fff" : "#000",
+                activeDisaster === "Nuke" ? "#ff4444" : "#fff",
+              color: activeDisaster === "Nuke" ? "#fff" : "#000",
             }}
           >
             <Radiation style={{ width: "1rem", height: "1rem" }} />
-            Nuclear
+            Nuke (10 KT)
+          </button>
+          <button
+            onClick={() => activateDisasterTool("Big Nuke")}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
+              padding: "0.5rem",
+              border: "1px solid #ccc",
+              borderRadius: "0.25rem",
+              cursor: "pointer",
+              backgroundColor: activeDisaster === "Big Nuke" ? "#ff4444" : "#fff",
+              color: activeDisaster === "Big Nuke" ? "#fff" : "#000",
+            }}
+          >
+            <Radiation style={{ width: "1rem", height: "1rem" }} />
+            Big Nuke (15 KT)
           </button>
         </div>
         <div style={{ marginTop: "1rem" }}>
@@ -376,8 +398,7 @@ const DisasterToolbar: React.FC<DisasterToolbarProps> = ({
               }}
             />
             <span style={{ color: "#000" }}>
-              Click on the map to analyze the impact zone. The red circle shows
-              a 610m radius.
+              BOMBA 💣
             </span>
           </div>
         )}
