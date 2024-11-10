@@ -272,25 +272,33 @@ const MapComponent: React.FC = () => {
           </p>
         </div>
       ) : (
-        <div>
+        <div className="relative w-full h-full">
           <div className="absolute top-0 right-0 p-4 bg-white text-black bg-opacity-70">
-            <button onClick={toggleLayerVisibility} className="w-12 h-8">
-              Toggle Sandy Inundation Layer
-            </button>
+            
             {buildingInfo ? (
               <BuildingInfo
                 longitude={buildingInfo.lng}
                 latitude={buildingInfo.lat}
               />
             ) : (
-              <p className="text-black text-7xl">
+              <p className="text-black">
                 "No building found at this location."
               </p>
             )}
           </div>
           <div className="absolute bottom-0 left-0 p-4 bg-white text-black bg-opacity-70 rounded-md shadow-lg">
-            <h1 className="text-lg font-bold mb-2">Building Filters</h1>
+            <h1 className="text-lg font-bold mb-2">Toggle Filters</h1>
 
+            <div className="flex items-center space-x-2">
+              <input 
+                type='checkbox'
+                id='sandyInundationLayer'
+                className="h-5 w-5"
+                checked={isLayerVisible}
+                onChange={toggleLayerVisibility}
+              />
+              <label htmlFor='sandyInundationLayer' className="text-sm">Sandy Inundation Layer</label>
+            </div>
             {/* Energy */}
             <div className="flex items-center space-x-2">
               <input
