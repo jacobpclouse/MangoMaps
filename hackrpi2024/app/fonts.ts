@@ -1,4 +1,4 @@
-import { Doto, Sour_Gummy } from 'next/font/google'
+import { Doto, Sour_Gummy, Geist } from 'next/font/google'
 
 export const doto = Doto({
   subsets: ['latin'],
@@ -6,6 +6,11 @@ export const doto = Doto({
 })
 
 export const sourGummy = Sour_Gummy({
+  subsets: ['latin'],
+  weight: ['400'],
+})
+
+export const geist = Geist({
   subsets: ['latin'],
   weight: ['400'],
 })
