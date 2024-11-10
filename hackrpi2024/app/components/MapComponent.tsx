@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
-import 'tailwindcss/tailwind.css';
 
 mapboxgl.accessToken = 'pk.eyJ1Ijoid2FuZ3duaWNvIiwiYSI6ImNtM2FoeGtzZzFkZWMycG9tendleXhna2cifQ.FyBqY-UtfsFwpqeaY0vlpw';
 
@@ -10,7 +9,7 @@ const MapComponent: React.FC = () => {
     const [isMapLoaded, setIsMapLoaded] = useState(false);
 
     const bounds: [number, number, number, number] = [-74.0210, 40.6981, -73.8655, 40.9153];
-    const [selectedBuildingId, setSelectedBuildingId] = useState<string | null>(null);
+    const [selectedBuildingId, setSelectedBuildingId] = useState<number | null>(null);
     const [address, setAddress] = useState<string | null>(null);
     const [buildingInfo, setBuildingInfo] = useState<string | null>(null);
 
@@ -96,7 +95,7 @@ const MapComponent: React.FC = () => {
             
                 if (features.length > 0) {
                     const building = features[0];
-                    const buildingId = building.id as string;
+                    const buildingId = building.id as number;
             
                     setBuildingInfo(`Building ID: ${buildingId} Height: ${building.properties!.height}`);
                     
