@@ -1,10 +1,33 @@
 import React, { useEffect, useRef, useState } from "react";
-import mapboxgl from "mapbox-gl";
+import mapboxgl, { DataDrivenPropertyValueSpecification } from "mapbox-gl";
 import BuildingInfo from "./BuildingInfo";
 
 mapboxgl.accessToken =
   "pk.eyJ1Ijoid2FuZ3duaWNvIiwiYSI6ImNtM2FoeGtzZzFkZWMycG9tendleXhna2cifQ.FyBqY-UtfsFwpqeaY0vlpw";
 
+const defaultBuildingPaint: DataDrivenPropertyValueSpecification<string> = [
+  "interpolate",
+  ["linear"],
+  ["get", "height"],
+  0,
+  "#E3F2FD",
+  20,
+  "#BBDEFB",
+  40,
+  "#90CAF9",
+  60,
+  "#64B5F6",
+  80,
+  "#42A5F5",
+  100,
+  "#2196F3",
+  150,
+  "#1E88E5",
+  200,
+  "#1976D2",
+  250,
+  "#1565C0",
+]
 const MapComponent: React.FC = () => {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
@@ -48,29 +71,7 @@ const MapComponent: React.FC = () => {
           minzoom: 15,
           maxzoom: 20,
           paint: {
-            "fill-extrusion-color": [
-              "interpolate",
-              ["linear"],
-              ["get", "height"],
-              0,
-              "#E3F2FD",
-              20,
-              "#BBDEFB",
-              40,
-              "#90CAF9",
-              60,
-              "#64B5F6",
-              80,
-              "#42A5F5",
-              100,
-              "#2196F3",
-              150,
-              "#1E88E5",
-              200,
-              "#1976D2",
-              250,
-              "#1565C0",
-            ],
+            "fill-extrusion-color": defaultBuildingPaint,
             "fill-extrusion-height": ["get", "height"],
             "fill-extrusion-base": ["get", "min_height"],
             "fill-extrusion-opacity": 0.6,
@@ -161,29 +162,7 @@ const MapComponent: React.FC = () => {
             }
 
             // Restore extrusion for all buildings
-            map.setPaintProperty("3d-buildings", "fill-extrusion-color", [
-              "interpolate",
-              ["linear"],
-              ["get", "height"],
-              0,
-              "#E3F2FD",
-              20,
-              "#BBDEFB",
-              40,
-              "#90CAF9",
-              60,
-              "#64B5F6",
-              80,
-              "#42A5F5",
-              100,
-              "#2196F3",
-              150,
-              "#1E88E5",
-              200,
-              "#1976D2",
-              250,
-              "#1565C0",
-            ]); // Restore color based on height
+            map.setPaintProperty("3d-buildings", "fill-extrusion-color", defaultBuildingPaint); // Restore color based on height
             map.setPaintProperty("3d-buildings", "fill-extrusion-height", [
               "get",
               "height",
@@ -244,14 +223,6 @@ const MapComponent: React.FC = () => {
     }
   };
 
-  const handleCheckboxChange = (filter: string) => {
-    if (selectedFilter === filter) {
-      setSelectedFilter(null);
-    } else {
-      setSelectedFilter(filter);
-    }
-  };
-
   return (
     <div className="relative w-full h-screen">
       <div
@@ -272,9 +243,8 @@ const MapComponent: React.FC = () => {
           </p>
         </div>
       ) : (
-        <div className="relative w-full h-full">
+        <div className="">
           <div className="absolute top-0 right-0 p-4 bg-white text-black bg-opacity-70">
-            
             {buildingInfo ? (
               <BuildingInfo
                 longitude={buildingInfo.lng}
@@ -290,14 +260,16 @@ const MapComponent: React.FC = () => {
             <h1 className="text-lg font-bold mb-2">Toggle Filters</h1>
 
             <div className="flex items-center space-x-2">
-              <input 
-                type='checkbox'
-                id='sandyInundationLayer'
+              <input
+                type="checkbox"
+                id="sandyInundationLayer"
                 className="h-5 w-5"
                 checked={isLayerVisible}
                 onChange={toggleLayerVisibility}
               />
-              <label htmlFor='sandyInundationLayer' className="text-sm">Sandy Inundation Layer</label>
+              <label htmlFor="sandyInundationLayer" className="text-sm">
+                Sandy Inundation Layer
+              </label>
             </div>
             {/* Energy */}
             <div className="flex items-center space-x-2">
@@ -305,10 +277,12 @@ const MapComponent: React.FC = () => {
                 type="checkbox"
                 id="energy"
                 className="h-5 w-5"
-                checked={selectedFilter === 'energy'}
-                onChange={() => handleCheckboxChange('energy')}
+                checked={selectedFilter === "energy"}
+                onChange={() => {}}
               />
-              <label htmlFor="energy" className="text-sm">Energy</label>
+              <label htmlFor="energy" className="text-sm">
+                Energy
+              </label>
             </div>
 
             {/* Air */}
@@ -317,10 +291,12 @@ const MapComponent: React.FC = () => {
                 type="checkbox"
                 id="air"
                 className="h-5 w-5"
-                checked={selectedFilter === 'air'}
-                onChange={() => handleCheckboxChange('air')}
+                checked={selectedFilter === "air"}
+                onChange={() => {}}
               />
-              <label htmlFor="air" className="text-sm">Air</label>
+              <label htmlFor="air" className="text-sm">
+                Air
+              </label>
             </div>
 
             {/* Flood */}
@@ -329,15 +305,16 @@ const MapComponent: React.FC = () => {
                 type="checkbox"
                 id="air"
                 className="h-5 w-5"
-                checked={selectedFilter === 'flood'}
-                onChange={() => handleCheckboxChange('flood')}
+                checked={selectedFilter === "flood"}
+                onChange={() => {}}
               />
-              <label htmlFor="air" className="text-sm">Flood</label>
+              <label htmlFor="air" className="text-sm">
+                Flood
+              </label>
             </div>
           </div>
         </div>
       )}
-
     </div>
   );
 };
