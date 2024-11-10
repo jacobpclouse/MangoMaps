@@ -20,6 +20,7 @@ const MapComponent: React.FC = () => {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const [currMap, setCurrMap] = useState<mapboxgl.Map | null>(null);
   const [isLayerVisible, setIsLayerVisible] = useState<boolean>(true);
+  const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
 
   useEffect(() => {
     if (mapContainerRef.current && !currMap) {
@@ -243,6 +244,14 @@ const MapComponent: React.FC = () => {
     }
   };
 
+  const handleCheckboxChange = (filter: string) => {
+    if (selectedFilter === filter) {
+      setSelectedFilter(null);
+    } else {
+      setSelectedFilter(filter);
+    }
+  };
+
   return (
     <div className="relative w-full h-screen">
       <div
@@ -263,22 +272,64 @@ const MapComponent: React.FC = () => {
           </p>
         </div>
       ) : (
-        <div className="absolute top-0 right-0 p-4 bg-white text-black bg-opacity-70">
-          <button onClick={toggleLayerVisibility} className="w-12 h-8">
-            Toggle Sandy Inundation Layer
-          </button>
-          {buildingInfo ? (
-            <BuildingInfo
-              longitude={buildingInfo.lng}
-              latitude={buildingInfo.lat}
-            />
-          ) : (
-            <p className="text-black text-7xl">
-              "No building found at this location."
-            </p>
-          )}
+        <div>
+          <div className="absolute top-0 right-0 p-4 bg-white text-black bg-opacity-70">
+            <button onClick={toggleLayerVisibility} className="w-12 h-8">
+              Toggle Sandy Inundation Layer
+            </button>
+            {buildingInfo ? (
+              <BuildingInfo
+                longitude={buildingInfo.lng}
+                latitude={buildingInfo.lat}
+              />
+            ) : (
+              <p className="text-black text-7xl">
+                "No building found at this location."
+              </p>
+            )}
+          </div>
+          <div className="absolute bottom-0 left-0 p-4 bg-white text-black bg-opacity-70 rounded-md shadow-lg">
+            <h1 className="text-lg font-bold mb-2">Building Filters</h1>
+
+            {/* Energy */}
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="energy"
+                className="h-5 w-5"
+                checked={selectedFilter === 'energy'}
+                onChange={() => handleCheckboxChange('energy')}
+              />
+              <label htmlFor="energy" className="text-sm">Energy</label>
+            </div>
+
+            {/* Air */}
+            <div className="flex items-center space-x-2 mt-2">
+              <input
+                type="checkbox"
+                id="air"
+                className="h-5 w-5"
+                checked={selectedFilter === 'air'}
+                onChange={() => handleCheckboxChange('air')}
+              />
+              <label htmlFor="air" className="text-sm">Air</label>
+            </div>
+
+            {/* Flood */}
+            <div className="flex items-center space-x-2 mt-2">
+              <input
+                type="checkbox"
+                id="air"
+                className="h-5 w-5"
+                checked={selectedFilter === 'flood'}
+                onChange={() => handleCheckboxChange('flood')}
+              />
+              <label htmlFor="air" className="text-sm">Flood</label>
+            </div>
+          </div>
         </div>
       )}
+
     </div>
   );
 };
