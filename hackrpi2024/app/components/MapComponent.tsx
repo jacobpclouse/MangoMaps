@@ -1,11 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
-import mapboxgl from "mapbox-gl";
+import mapboxgl, { DataDrivenPropertyValueSpecification } from "mapbox-gl";
 import BuildingInfo from "./BuildingInfo";
 import DisasterToolbar from "./Disaster";
 
 mapboxgl.accessToken =
   "pk.eyJ1Ijoid2FuZ3duaWNvIiwiYSI6ImNtM2FoeGtzZzFkZWMycG9tendleXhna2cifQ.FyBqY-UtfsFwpqeaY0vlpw";
-
 
 
 const MapComponent: React.FC = () => {
@@ -23,6 +22,7 @@ const MapComponent: React.FC = () => {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const [currMap, setCurrMap] = useState<mapboxgl.Map | null>(null);
   const [isLayerVisible, setIsLayerVisible] = useState<boolean>(true);
+  const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
 
   useEffect(() => {
     if (mapContainerRef.current && !currMap) {
@@ -41,6 +41,29 @@ const MapComponent: React.FC = () => {
       }, 100);
 
       map.on("load", () => {
+        const defaultBuildingPaint: DataDrivenPropertyValueSpecification<string> = [
+          "interpolate",
+          ["linear"],
+          ["get", "height"],
+          0,
+          "#E3F2FD",
+          20,
+          "#BBDEFB",
+          40,
+          "#90CAF9",
+          60,
+          "#64B5F6",
+          80,
+          "#42A5F5",
+          100,
+          "#2196F3",
+          150,
+          "#1E88E5",
+          200,
+          "#1976D2",
+          250,
+          "#1565C0",
+        ]
         map.addLayer({
           id: "3d-buildings",
           source: "composite",
@@ -50,29 +73,7 @@ const MapComponent: React.FC = () => {
           minzoom: 15,
           maxzoom: 20,
           paint: {
-            "fill-extrusion-color": [
-              "interpolate",
-              ["linear"],
-              ["get", "height"],
-              0,
-              "#E3F2FD",
-              20,
-              "#BBDEFB",
-              40,
-              "#90CAF9",
-              60,
-              "#64B5F6",
-              80,
-              "#42A5F5",
-              100,
-              "#2196F3",
-              150,
-              "#1E88E5",
-              200,
-              "#1976D2",
-              250,
-              "#1565C0",
-            ],
+            "fill-extrusion-color": defaultBuildingPaint,
             "fill-extrusion-height": ["get", "height"],
             "fill-extrusion-base": ["get", "min_height"],
             "fill-extrusion-opacity": 0.6,
@@ -163,29 +164,7 @@ const MapComponent: React.FC = () => {
             }
 
             // Restore extrusion for all buildings
-            map.setPaintProperty("3d-buildings", "fill-extrusion-color", [
-              "interpolate",
-              ["linear"],
-              ["get", "height"],
-              0,
-              "#E3F2FD",
-              20,
-              "#BBDEFB",
-              40,
-              "#90CAF9",
-              60,
-              "#64B5F6",
-              80,
-              "#42A5F5",
-              100,
-              "#2196F3",
-              150,
-              "#1E88E5",
-              200,
-              "#1976D2",
-              250,
-              "#1565C0",
-            ]); // Restore color based on height
+            map.setPaintProperty("3d-buildings", "fill-extrusion-color", defaultBuildingPaint); // Restore color based on height
             map.setPaintProperty("3d-buildings", "fill-extrusion-height", [
               "get",
               "height",
