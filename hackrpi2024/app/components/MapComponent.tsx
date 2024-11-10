@@ -78,16 +78,18 @@ const MapComponent: React.FC = () => {
             map.on('click', (event) => {
                 const { lng, lat } = event.lngLat;
                 reverseGeocode([lng, lat]);
+            
+                // Fly to the clicked location smoothly
                 map.flyTo({
                     center: [lng, lat],
                     zoom: 18,
                     pitch: 40,
                     bearing: -10,
-                    speed: 0.8, // Make the transition smooth
-                    curve: 1, // Make the transition smooth
-                    easing: (t) => t * (2 - t), // Linear easing
+                    speed: 0.8,
+                    curve: 1,
+                    easing: (t) => t * (2 - t), // Smooth easing
                 });
-                
+            
                 const features = map.queryRenderedFeatures(
                     map.project([lng, lat]),
                     { layers: ['3d-buildings'] }
@@ -98,18 +100,69 @@ const MapComponent: React.FC = () => {
                     const buildingId = building.id as number;
             
                     setBuildingInfo(`Building ID: ${buildingId} Height: ${building.properties!.height}`);
-                    
-                    // Update state and then update the map filter
                     setSelectedBuildingId(buildingId);
-                    map.setFilter('highlighted-building', ['==', 'id', buildingId]);
+            
+                    // Disable extrusion from the 3d-buildings layer
+                    map.setPaintProperty('3d-buildings', 'fill-extrusion-color', 'rgba(0, 0, 0, 0)'); // Make extrusion invisible
+                    map.setPaintProperty('3d-buildings', 'fill-extrusion-height', 0);  // Set extrusion height to 0
+            
+                    // Remove the existing highlight layer if it exists
+                    if (map.getLayer('highlighted-building-layer')) {
+                        map.removeLayer('highlighted-building-layer');
+                        map.removeSource('highlighted-building-source');
+                    }
+            
+                    // Create a new source with only the selected building
+                    map.addSource('highlighted-building-source', {
+                        type: 'geojson',
+                        data: {
+                            type: 'FeatureCollection',
+                            features: [building]  // Add only the selected building
+                        }
+                    });
+            
+                    // Add a new layer to highlight the selected building
+                    map.addLayer({
+                        id: 'highlighted-building-layer',
+                        type: 'fill-extrusion',
+                        source: 'highlighted-building-source',
+                        paint: {
+                            'fill-extrusion-color': '#00FF00',  // Highlight with green color
+                            'fill-extrusion-height': ['get', 'height'],
+                            'fill-extrusion-base': ['get', 'min_height'],
+                            'fill-extrusion-opacity': 0.8,
+                        }
+                    });
+                    
                 } else {
                     setBuildingInfo("No building found at this location.");
-                    
-                    // Clear selection by setting the filter to an empty string
+            
+                    // Clear selection by removing the highlighted building layer
                     setSelectedBuildingId(null);
-                    map.setFilter('highlighted-building', ['==', 'id', '']);
+                    if (map.getLayer('highlighted-building-layer')) {
+                        map.removeLayer('highlighted-building-layer');
+                        map.removeSource('highlighted-building-source');
+                    }
+            
+                    // Restore extrusion for all buildings
+                    map.setPaintProperty('3d-buildings', 'fill-extrusion-color', [
+                        'interpolate',
+                        ['linear'],
+                        ['get', 'height'],
+                        0, '#E3F2FD',
+                        20, '#BBDEFB',
+                        40, '#90CAF9',
+                        60, '#64B5F6',
+                        80, '#42A5F5',
+                        100, '#2196F3',
+                        150, '#1E88E5',
+                        200, '#1976D2',
+                        250, '#1565C0'
+                    ]); // Restore color based on height
+                    map.setPaintProperty('3d-buildings', 'fill-extrusion-height', ['get', 'height']);  // Restore extrusion height
                 }
             });
+            
         }); 
 
         const reverseGeocode = async (coordinates: [number, number]) => {
