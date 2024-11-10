@@ -1,4 +1,3 @@
-// app/api/getBuildingInfo/route.ts
 import { NextResponse } from 'next/server';
 
 export async function GET(req: Request) {
@@ -16,13 +15,25 @@ export async function GET(req: Request) {
     const response = await fetch(
       `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&radius=1000&type=premise&key=${apiKey}`
     );
-    console.log(latitude, longitude);
+
     if (!response.ok) {
       throw new Error(`Failed to fetch: ${response.statusText}`);
     }
 
     const data = await response.json();
-    return NextResponse.json(data);
+    
+    // Optionally fetch details for each place
+    const placesWithDetails = await Promise.all(
+      data.results.map(async (place: any) => {
+        const placeDetailsResponse = await fetch(
+          `https://maps.googleapis.com/maps/api/place/details/json?place_id=${place.place_id}&key=${apiKey}`
+        );
+        const placeDetails = await placeDetailsResponse.json();
+        return { ...place, details: placeDetails.result };
+      })
+    );
+    
+    return NextResponse.json(placesWithDetails);
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: 'Failed to fetch building information' }, { status: 500 });

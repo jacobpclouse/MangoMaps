@@ -13,9 +13,6 @@ const MapComponent: React.FC = () => {
   const bounds: [number, number, number, number] = [
     -74.021, 40.6981, -73.8655, 40.9153,
   ];
-  const [selectedBuildingId, setSelectedBuildingId] = useState<number | null>(
-    null
-  );
   const [address, setAddress] = useState<string | null>(null);
   const [buildingInfo, setBuildingInfo] = useState<any | null>(null);
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
@@ -114,8 +111,6 @@ const MapComponent: React.FC = () => {
               lng: lng,
               lat: lat,
             });
-            // buildingId} Height: ${building.properties!.height}`);
-            setSelectedBuildingId(buildingId);
 
             // Disable extrusion from the 3d-buildings layer
             map.setPaintProperty(
@@ -156,7 +151,6 @@ const MapComponent: React.FC = () => {
             setBuildingInfo("No building found at this location.");
 
             // Clear selection by removing the highlighted building layer
-            setSelectedBuildingId(null);
             if (map.getLayer("highlighted-building-layer")) {
               map.removeLayer("highlighted-building-layer");
               map.removeSource("highlighted-building-source");

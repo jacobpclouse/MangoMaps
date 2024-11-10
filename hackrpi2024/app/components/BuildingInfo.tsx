@@ -1,4 +1,3 @@
-// app/components/BuildingInfo.tsx
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -22,8 +21,8 @@ const BuildingInfo: React.FC<BuildingInfoProps> = ({ latitude, longitude }) => {
         }
 
         const data = await response.json();
-        setBuildingInfo(data.results[0]); // Store the first nearby place
-        console.log(data);
+        setBuildingInfo(data.results); // Store the list of nearby places
+        console.log("data, ", data); // Optional: for debugging
       } catch (err) {
         setError('Error fetching building information.');
         console.error(err);
@@ -38,8 +37,39 @@ const BuildingInfo: React.FC<BuildingInfoProps> = ({ latitude, longitude }) => {
       {error && <p>{error}</p>}
       {buildingInfo ? (
         <div>
-          <h3>{buildingInfo.name}</h3>
-          <p>Address: {buildingInfo.vicinity}</p>
+          {buildingInfo.map((place: any, index: number) => (
+            <div key={index} className="mb-4">
+              <h3 className="text-xl font-bold">{place.name}</h3>
+              <p><strong>Address:</strong> {place.vicinity}</p>
+              {place.rating && (
+                <p><strong>Rating:</strong> {place.rating} ({place.user_ratings_total} reviews)</p>
+              )}
+              {place.opening_hours && (
+                <div>
+                  <strong>Opening Hours:</strong>
+                  <ul>
+                    {place.opening_hours.weekday_text.map((day: string, i: number) => (
+                      <li key={i}>{day}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {place.photos && place.photos.length > 0 && (
+                <div>
+                  <strong>Photos:</strong>
+                  <img
+                    src={`https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${place.photos[0].photo_reference}&key=YOUR_GOOGLE_API_KEY`}
+                    alt="Building photo"
+                    className="w-full h-auto my-2"
+                  />
+                </div>
+              )}
+              {place.price_level && (
+                <p><strong>Price Level:</strong> {place.price_level}</p>
+              )}
+              <p><strong>Place Type:</strong> {place.types.join(', ')}</p>
+            </div>
+          ))}
         </div>
       ) : (
         !error && <p>Loading...</p>
