@@ -173,7 +173,7 @@ const MapComponent: React.FC = () => {
                 type: 'fill',
                 source: 'sandy-inundation',
                 paint: {
-                    'fill-color': '#FF0000', // Red color for inundation areas
+                    'fill-color': '#00008B', // Dark blue color for inundation areas
                     'fill-opacity': 0.5,
                 },
             });
