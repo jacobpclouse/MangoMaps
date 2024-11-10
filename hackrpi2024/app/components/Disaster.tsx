@@ -259,6 +259,8 @@ const DisasterToolbar: React.FC<DisasterToolbarProps> = ({
           paint: {
             "fill-extrusion-color": "#00008B", // Dark blue color
             "fill-extrusion-height": level,
+            "fill-extrusion-base": 0,
+            "fill-extrusion-opacity": 0.5,
           },
         });
       }
