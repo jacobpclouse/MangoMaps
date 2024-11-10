@@ -74,7 +74,7 @@ const MapComponent: React.FC = () => {
                 setLoadingProgress(100);
                 setIsMapLoaded(true);
             });
-            
+
             map.on('click', (event) => {
                 const { lng, lat } = event.lngLat;
                 reverseGeocode([lng, lat]);
@@ -161,6 +161,21 @@ const MapComponent: React.FC = () => {
                     ]); // Restore color based on height
                     map.setPaintProperty('3d-buildings', 'fill-extrusion-height', ['get', 'height']);  // Restore extrusion height
                 }
+            });
+
+            map.addSource('sandy-inundation', {
+                type: 'geojson',
+                data: '/sandy_inundation.geojson',
+            });
+
+            map.addLayer({
+                id: 'sandy-inundation-layer',
+                type: 'fill',
+                source: 'sandy-inundation',
+                paint: {
+                    'fill-color': '#FF0000', // Red color for inundation areas
+                    'fill-opacity': 0.5,
+                },
             });
             
         }); 
