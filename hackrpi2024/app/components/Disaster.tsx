@@ -225,7 +225,6 @@ const DisasterToolbar: React.FC<DisasterToolbarProps> = ({
   const handleWaterLevelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const level = parseInt(e.target.value, 10);
     setWaterLevel(level);
-
     if (map && map.isStyleLoaded()) {
       // Update water elevation layer based on the water level
       if (map.getLayer("water-elevation-layer")) {

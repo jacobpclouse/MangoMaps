@@ -2,13 +2,15 @@ import React, { useEffect, useRef, useState } from "react";
 import mapboxgl, { DataDrivenPropertyValueSpecification } from "mapbox-gl";
 import BuildingInfo from "./BuildingInfo";
 import DisasterToolbar from "./Disaster";
+import axios from "axios";
 
-mapboxgl.accessToken =
-  "pk.eyJ1Ijoid2FuZ3duaWNvIiwiYSI6ImNtM2FoeGtzZzFkZWMycG9tendleXhna2cifQ.FyBqY-UtfsFwpqeaY0vlpw";
+mapboxgl.accessToken = "pk.eyJ1Ijoid2FuZ3duaWNvIiwiYSI6ImNtM2FoeGtzZzFkZWMycG9tendleXhna2cifQ.FyBqY-UtfsFwpqeaY0vlpw";
 
 const MapComponent: React.FC = () => {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
+  const [isAirVisible, setIsAirVisible] = useState<boolean>(false);
+
 
   const bounds: [number, number, number, number] = [
     -74.021, 40.6981, -73.8655, 40.9153,
@@ -36,56 +38,6 @@ const MapComponent: React.FC = () => {
 
       map.on("load", () => {
         const apiKey = "AIzaSyA-51pZHoT-21FHrhXwzTGT-vO3rn5fByc"; // Replace with your actual API key
-
-        // Add the air quality heatmap as a raster source, but keep it hidden initially
-        map.addSource("air-quality-heatmap", {
-          type: "raster",
-          tiles: [], // Will be dynamically updated
-          tileSize: 256,
-        });
-
-        // Add the air quality heatmap layer with visibility set to none
-        map.addLayer({
-          id: "air-quality-heatmap-layer",
-          type: "raster",
-          source: "air-quality-heatmap",
-          paint: {
-            "raster-opacity": 0.7, // Adjust opacity as needed
-          },
-          layout: {
-            visibility: "none", // Hide initially
-          },
-        });
-
-        // Function to update the tile URL dynamically based on the map state
-        const updateTileUrl = () => {
-          const zoom = Math.floor(map.getZoom());  // Ensure zoom is an integer
-          const center = map.getCenter();
-          const x = Math.floor((center.lng + 180) / 360 * Math.pow(2, zoom));  // Ensure x is an integer
-          const y = Math.floor(
-            (1 - Math.log(Math.tan(center.lat * Math.PI / 180) + 1 / Math.cos(center.lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, zoom)
-          );  // Ensure y is an integer
-          
-          // Construct tile URL with proper zoom, x, and y
-          const tileURL = `https://airquality.googleapis.com/v1/mapTypes/US_AQI/heatmapTiles/${zoom}/${x}/${y}?key=${apiKey}`;
-          
-          // Add null check for the source and cast to RasterSource
-          const source = map.getSource("air-quality-heatmap") as mapboxgl.RasterTileSource | undefined;
-        
-          if (source) {
-            source.setTiles([tileURL]);
-          } else {
-            console.warn("Air quality heatmap source is not available yet.");
-          }
-        };
-        
-        
-        // Call updateTileUrl to load the initial set of tiles
-        updateTileUrl();
-
-        // Listen to map events to update the tile URL when zoom or map center changes
-        map.on("moveend", updateTileUrl);
-        map.on("zoomend", updateTileUrl);
         
         const defaultBuildingPaint: DataDrivenPropertyValueSpecification<string> = [
           "interpolate",
@@ -110,6 +62,24 @@ const MapComponent: React.FC = () => {
           250,
           "#1565C0",
         ];
+
+        // Add zip code GeoJSON data as a source
+        map.addSource('zip-codes', {
+          type: 'geojson',
+          data: '/zipCodeData.geojson'
+        });
+
+        // Add a layer to display the zip code boundaries
+        map.addLayer({
+          id: 'zip-code-boundaries',
+          type: 'line',
+          source: 'zip-codes',
+          paint: {
+            'line-color': '#888',
+            'line-width': 2,
+          },
+        });
+        
         map.addSource("sandy-inundation", {
           type: "geojson",
           data: "/sandy_inundation.geojson",
@@ -268,19 +238,133 @@ const MapComponent: React.FC = () => {
     }
   }
 
-  const [isAirVisible, setIsAirVisible] = useState<boolean>(false);
-  const toggleAirVisibility = () => {
-    if (currMap) {
-      const newVisibility = isAirVisible ? "none" : "visible";
-      currMap.setLayoutProperty(
-        "air-quality-heatmap-layer",
-        "visibility",
-        newVisibility
-      );
-      setIsAirVisible(!isAirVisible);
+  
+
+  const fetchAirQualityData = async () => {
+    try {
+      const apiKey = "AIzaSyA-51pZHoT-21FHrhXwzTGT-vO3rn5fByc"; // Replace with your actual API key
+      const zipCodeGeoJson = await axios.get('/zipCodeData.geojson').then(response => response.data);
+      const features = zipCodeGeoJson.features;
+      const airQualityDataPromises = features.map(async (feature: any) => {
+        const { coordinates } = feature.geometry;
+        const [lng, lat] = coordinates[0][0]; // Get the first coordinate of the polygon
+        
+        const requestBody = {
+          location: {
+            latitude: lat,
+            longitude: lng,
+          },
+        };
+
+        const response = await axios.post(
+          `https://airquality.googleapis.com/v1/currentConditions:lookup?key=${apiKey}`,
+          requestBody,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+        
+        console.log(response);
+        console.log(`Air quality data for coordinates (${lat}, ${lng}):`, response.data);
+
+        const airQualityData = response.data.indexes.find((index: any) => index.code === "uaqi");
+        return {
+          ...feature,
+          properties: {
+            ...feature.properties,
+            airQuality: airQualityData ? airQualityData.aqi : "N/A",
+            airQualityCategory: airQualityData ? airQualityData.category : "N/A",
+            airQualityColor: airQualityData ? `rgba(${airQualityData.color.red * 255}, ${airQualityData.color.green * 255}, ${airQualityData.color.blue * 255}, 1)` : "rgba(0, 0, 0, 0)",
+          },
+        };
+      });
+
+      const airQualityData = await Promise.all(airQualityDataPromises);
+
+      const updatedGeoJson = {
+        ...zipCodeGeoJson,
+        features: airQualityData,
+      };
+
+      if (currMap) {
+        const airQualitySource = currMap.getSource('zip-codes') as mapboxgl.GeoJSONSource;
+        airQualitySource.setData(updatedGeoJson);
+
+        if (!currMap.getLayer('air-quality-polygons')) {
+          currMap.addLayer({
+        id: 'air-quality-polygons',
+        type: 'fill',
+        source: 'zip-codes',
+        paint: {
+          'fill-color': ['get', 'airQualityColor'],
+          'fill-opacity': 0.5,
+        },
+          });
+        }
+        
+        if (!currMap.getLayer('air-quality-labels')) {
+          currMap.addLayer({
+        id: 'air-quality-labels',
+        type: 'symbol',
+        source: 'zip-codes',
+        layout: {
+          'text-field': [
+            'format',
+            ['get', 'airQuality'], { 'font-scale': 1.5, 'text-font': ['Open Sans Bold'] },
+            '\n', {},
+            ['get', 'airQualityCategory'], { 'font-scale': 1.2, 'text-font': ['Open Sans Regular'] }
+          ],
+          'text-size': 14,
+          'text-offset': [0, 0],
+          'text-anchor': 'center',
+        },
+        paint: {
+          'text-color': '#000000',
+          'text-halo-color': '#ffffff',
+          'text-halo-width': 2,
+        },
+          });
+        }
+      }
+      }
+    catch (error) {
+      console.error('Error fetching air quality data:', error);
     }
   };
 
+  const toggleAirVisibility = () => {
+    if (currMap) {
+      if (!isAirVisible) {
+        currMap.flyTo({
+          center: [-73.9654, 40.7829], // Centered on NYC
+          zoom: 12, // Zoom out to a larger view
+          pitch: 0, // Set to top-down view
+          bearing: 0, // Reset bearing to north
+        });
+        if (currMap.getLayer('air-quality-labels')) {
+          currMap.setLayoutProperty('air-quality-labels', 'visibility', 'visible');
+        }
+        if (currMap.getLayer('air-quality-polygons')) {
+          currMap.setLayoutProperty('air-quality-polygons', 'visibility', 'visible');
+        }
+        else {
+          fetchAirQualityData();
+        }
+      } else {
+        // Set air quality labels and polygons to be invisible
+        if (currMap.getLayer('air-quality-labels')) {
+          currMap.setLayoutProperty('air-quality-labels', 'visibility', 'none');
+        }
+        if (currMap.getLayer('air-quality-polygons')) {
+          currMap.setLayoutProperty('air-quality-polygons', 'visibility', 'none');
+        }
+      }
+      setIsAirVisible(!isAirVisible);
+    }
+  };
+  
   return (
     <div className="relative w-full h-screen overflow-clip">
       <div
