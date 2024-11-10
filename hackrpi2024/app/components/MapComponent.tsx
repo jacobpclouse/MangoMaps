@@ -35,6 +35,58 @@ const MapComponent: React.FC = () => {
       }, 100);
 
       map.on("load", () => {
+        const apiKey = "AIzaSyA-51pZHoT-21FHrhXwzTGT-vO3rn5fByc"; // Replace with your actual API key
+
+        // Add the air quality heatmap as a raster source, but keep it hidden initially
+        map.addSource("air-quality-heatmap", {
+          type: "raster",
+          tiles: [], // Will be dynamically updated
+          tileSize: 256,
+        });
+
+        // Add the air quality heatmap layer with visibility set to none
+        map.addLayer({
+          id: "air-quality-heatmap-layer",
+          type: "raster",
+          source: "air-quality-heatmap",
+          paint: {
+            "raster-opacity": 0.7, // Adjust opacity as needed
+          },
+          layout: {
+            visibility: "none", // Hide initially
+          },
+        });
+
+        // Function to update the tile URL dynamically based on the map state
+        const updateTileUrl = () => {
+          const zoom = Math.floor(map.getZoom());  // Ensure zoom is an integer
+          const center = map.getCenter();
+          const x = Math.floor((center.lng + 180) / 360 * Math.pow(2, zoom));  // Ensure x is an integer
+          const y = Math.floor(
+            (1 - Math.log(Math.tan(center.lat * Math.PI / 180) + 1 / Math.cos(center.lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, zoom)
+          );  // Ensure y is an integer
+          
+          // Construct tile URL with proper zoom, x, and y
+          const tileURL = `https://airquality.googleapis.com/v1/mapTypes/US_AQI/heatmapTiles/${zoom}/${x}/${y}?key=${apiKey}`;
+          
+          // Add null check for the source and cast to RasterSource
+          const source = map.getSource("air-quality-heatmap") as mapboxgl.RasterTileSource | undefined;
+        
+          if (source) {
+            source.setTiles([tileURL]);
+          } else {
+            console.warn("Air quality heatmap source is not available yet.");
+          }
+        };
+        
+        
+        // Call updateTileUrl to load the initial set of tiles
+        updateTileUrl();
+
+        // Listen to map events to update the tile URL when zoom or map center changes
+        map.on("moveend", updateTileUrl);
+        map.on("zoomend", updateTileUrl);
+        
         const defaultBuildingPaint: DataDrivenPropertyValueSpecification<string> = [
           "interpolate",
           ["linear"],
@@ -192,7 +244,6 @@ const MapComponent: React.FC = () => {
 
       setCurrMap(map);
     }
-
     return () => currMap?.remove();
   }, [currMap]); // Depend on updateTrigger to re-render when it changes
 
@@ -220,11 +271,15 @@ const MapComponent: React.FC = () => {
   const [isAirVisible, setIsAirVisible] = useState<boolean>(false);
   const toggleAirVisibility = () => {
     if (currMap) {
-      console.log("Air layer toggled");
+      const newVisibility = isAirVisible ? "none" : "visible";
+      currMap.setLayoutProperty(
+        "air-quality-heatmap-layer",
+        "visibility",
+        newVisibility
+      );
       setIsAirVisible(!isAirVisible);
     }
-  }
-
+  };
 
   return (
     <div className="relative w-full h-screen overflow-clip">
