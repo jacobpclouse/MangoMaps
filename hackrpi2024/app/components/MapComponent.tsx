@@ -6,7 +6,6 @@ import DisasterToolbar from "./Disaster";
 mapboxgl.accessToken =
   "pk.eyJ1Ijoid2FuZ3duaWNvIiwiYSI6ImNtM2FoeGtzZzFkZWMycG9tendleXhna2cifQ.FyBqY-UtfsFwpqeaY0vlpw";
 
-
 const MapComponent: React.FC = () => {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
@@ -14,12 +13,10 @@ const MapComponent: React.FC = () => {
   const bounds: [number, number, number, number] = [
     -74.021, 40.6981, -73.8655, 40.9153,
   ];
-  const [address, setAddress] = useState<string | null>(null);
   const [buildingInfo, setBuildingInfo] = useState<any | null>(null);
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const [currMap, setCurrMap] = useState<mapboxgl.Map | null>(null);
-  const [isLayerVisible, setIsLayerVisible] = useState<boolean>(true);
-  const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
+
 
   useEffect(() => {
     if (mapContainerRef.current && !currMap) {
@@ -60,7 +57,21 @@ const MapComponent: React.FC = () => {
           "#1976D2",
           250,
           "#1565C0",
-        ]
+        ];
+        map.addSource("sandy-inundation", {
+          type: "geojson",
+          data: "/sandy_inundation.geojson",
+        });
+
+        map.addLayer({
+          id: "sandy-inundation-layer",
+          type: "fill",
+          source: "sandy-inundation",
+          paint: {
+            "fill-color": "#00008B", // Dark blue color for inundation areas
+            "fill-opacity": 0.5,
+          },
+        });
         map.addLayer({
           id: "3d-buildings",
           source: "composite",
@@ -73,7 +84,7 @@ const MapComponent: React.FC = () => {
             "fill-extrusion-color": defaultBuildingPaint,
             "fill-extrusion-height": ["get", "height"],
             "fill-extrusion-base": ["get", "min_height"],
-            "fill-extrusion-opacity": 0.6,
+            "fill-extrusion-opacity": 0.85,
           },
         });
 
@@ -85,7 +96,6 @@ const MapComponent: React.FC = () => {
 
         map.on("click", (event) => {
           const { lng, lat } = event.lngLat;
-          reverseGeocode([lng, lat]);
 
           // Fly to the clicked location smoothly
           map.flyTo({
@@ -145,7 +155,7 @@ const MapComponent: React.FC = () => {
                 "fill-extrusion-color": "#00FF00", // Highlight with green color
                 "fill-extrusion-height": ["get", "height"],
                 "fill-extrusion-base": ["get", "min_height"],
-                "fill-extrusion-opacity": 0.8,
+                "fill-extrusion-opacity": 0.85,
               },
             });
           } else {
@@ -158,7 +168,11 @@ const MapComponent: React.FC = () => {
             }
 
             // Restore extrusion for all buildings
-            map.setPaintProperty("3d-buildings", "fill-extrusion-color", defaultBuildingPaint); // Restore color based on height
+            map.setPaintProperty(
+              "3d-buildings",
+              "fill-extrusion-color",
+              defaultBuildingPaint
+            ); // Restore color based on height
             map.setPaintProperty("3d-buildings", "fill-extrusion-height", [
               "get",
               "height",
@@ -166,58 +180,44 @@ const MapComponent: React.FC = () => {
           }
         });
 
-        map.addSource("sandy-inundation", {
-          type: "geojson",
-          data: "/sandy_inundation.geojson",
-        });
-
-        map.addLayer({
-          id: "sandy-inundation-layer",
-          type: "fill",
-          source: "sandy-inundation",
-          paint: {
-            "fill-color": "#00008B", // Dark blue color for inundation areas
-            "fill-opacity": 0.5,
-          },
-        });
+        
       });
 
       setCurrMap(map);
     }
-    const reverseGeocode = async (coordinates: [number, number]) => {
-      const [longitude, latitude] = coordinates;
-      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${longitude},${latitude}.json?access_token=${mapboxgl.accessToken}`;
-
-      try {
-        const response = await fetch(url);
-        const data = await response.json();
-        const firstResult = data.features[0];
-
-        if (firstResult) {
-          setAddress(firstResult.place_name);
-        } else {
-          setAddress("Address not found");
-        }
-      } catch (error) {
-        console.error("Error in reverse geocoding:", error);
-        setAddress("Error fetching address");
-      }
-    };
 
     return () => currMap?.remove();
   }, [currMap]); // Depend on updateTrigger to re-render when it changes
 
-  const toggleLayerVisibility = () => {
+  const [isFloodVisible, setIsFloodVisible] = useState<boolean>(false);
+  const toggleFloodVisibility = () => {
     if (currMap) {
-      const newVisibility = isLayerVisible ? "none" : "visible";
+      const newVisibility = isFloodVisible ? "none" : "visible";
       currMap.setLayoutProperty(
         "sandy-inundation-layer",
         "visibility",
         newVisibility
       );
-      setIsLayerVisible(!isLayerVisible);
+      setIsFloodVisible(!isFloodVisible);
     }
   };
+  
+  const [isEnergyVisible, setIsEnergyVisible] = useState<boolean>(false);
+  const toggleEnergyVisibility = () => {
+    if (currMap) {
+      console.log("Energy layer toggled");
+      setIsEnergyVisible(!isEnergyVisible);
+    }
+  }
+
+  const [isAirVisible, setIsAirVisible] = useState<boolean>(false);
+  const toggleAirVisibility = () => {
+    if (currMap) {
+      console.log("Air layer toggled");
+      setIsAirVisible(!isAirVisible);
+    }
+  }
+
 
   return (
     <div className="relative w-full h-screen overflow-clip">
@@ -253,20 +253,19 @@ const MapComponent: React.FC = () => {
               </p>
             )}
           </div>
-          <div className="absolute bottom-0 left-0 p-4 bg-white text-black bg-opacity-70 rounded-md shadow-lg">
-            
-            <h1 className="text-lg font-bold mb-2">Toggle Filters</h1>
+          <div className="absolute bottom-0 left-0 p-4 bg-white text-black bg-opacity-70 rounded-md shadow-lg flex flex-col gap-2">
+            <h1 className="text-lg font-bold">Toggle Filters</h1>
 
             <div className="flex items-center space-x-2">
               <input
                 type="checkbox"
                 id="sandyInundationLayer"
                 className="h-5 w-5"
-                checked={isLayerVisible}
-                onChange={toggleLayerVisibility}
+                checked={isFloodVisible}
+                onChange={toggleFloodVisibility}
               />
               <label htmlFor="sandyInundationLayer" className="text-sm">
-                Sandy Inundation Layer
+                Flood
               </label>
             </div>
             {/* Energy */}
@@ -275,8 +274,8 @@ const MapComponent: React.FC = () => {
                 type="checkbox"
                 id="energy"
                 className="h-5 w-5"
-                checked={selectedFilter === "energy"}
-                onChange={() => {}}
+                checked={isEnergyVisible}
+                onChange={toggleEnergyVisibility}
               />
               <label htmlFor="energy" className="text-sm">
                 Energy
@@ -284,30 +283,16 @@ const MapComponent: React.FC = () => {
             </div>
 
             {/* Air */}
-            <div className="flex items-center space-x-2 mt-2">
+            <div className="flex items-center space-x-2">
               <input
                 type="checkbox"
                 id="air"
                 className="h-5 w-5"
-                checked={selectedFilter === "air"}
-                onChange={() => {}}
+                checked={isAirVisible}
+                onChange={toggleAirVisibility}
               />
               <label htmlFor="air" className="text-sm">
                 Air
-              </label>
-            </div>
-
-            {/* Flood */}
-            <div className="flex items-center space-x-2 mt-2">
-              <input
-                type="checkbox"
-                id="air"
-                className="h-5 w-5"
-                checked={selectedFilter === "flood"}
-                onChange={() => {}}
-              />
-              <label htmlFor="air" className="text-sm">
-                Flood
               </label>
             </div>
           </div>

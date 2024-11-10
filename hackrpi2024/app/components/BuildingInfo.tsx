@@ -58,7 +58,7 @@ const BuildingInfo: React.FC<BuildingInfoProps> = ({ latitude, longitude }) => {
                 <div>
                   <strong>Photos:</strong>
                   <img
-                    src={`https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${place.photos[0].photo_reference}&key=YOUR_GOOGLE_API_KEY`}
+                    src={`https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${place.photos[0].photo_reference}&key=AIzaSyAp4c2P5a1tvcUfFSkTIZelltuHcTpQAjs`}
                     alt="Building photo"
                     className="w-full h-auto my-2"
                   />
