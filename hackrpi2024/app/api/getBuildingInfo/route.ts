@@ -38,7 +38,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Latitude and longitude are required' }, { status: 400 });
   }
 
-  const apiKey = 'AIzaSyAp4c2P5a1tvcUfFSkTIZelltuHcTpQAjs';
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY_JUSTIN;
 
   try {
     const response = await fetch(

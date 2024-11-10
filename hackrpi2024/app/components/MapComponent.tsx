@@ -7,6 +7,24 @@ import LoadingBar from "./LoadingBar";
 
 mapboxgl.accessToken = "pk.eyJ1Ijoid2FuZ3duaWNvIiwiYSI6ImNtM2FoeGtzZzFkZWMycG9tendleXhna2cifQ.FyBqY-UtfsFwpqeaY0vlpw";
 
+interface FeatureProperties {
+  airQuality: string;
+  airQualityCategory: string;
+  airQualityColor: string;
+  [key: string]: unknown;
+}
+
+interface FeatureGeometry {
+  type: string;
+  coordinates: number[][][];
+}
+
+interface Feature {
+  type: string;
+  properties: FeatureProperties;
+  geometry: FeatureGeometry;
+}
+
 const MapComponent: React.FC = () => {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
@@ -290,86 +308,49 @@ const MapComponent: React.FC = () => {
 
   const fetchAirQualityData = async () => {
     try {
-      const apiKey = "AIzaSyA-51pZHoT-21FHrhXwzTGT-vO3rn5fByc"; // Replace with your actual API key
       const zipCodeGeoJson = await axios.get('/zipCodeData.geojson').then(response => response.data);
       const features = zipCodeGeoJson.features;
-      interface FeatureProperties {
-        airQuality: string;
-        airQualityCategory: string;
-        airQualityColor: string;
-        [key: string]: unknown;
-      }
-
-      interface FeatureGeometry {
-        type: string;
-        coordinates: number[][][];
-      }
-
-      interface Feature {
-        type: string;
-        properties: FeatureProperties;
-        geometry: FeatureGeometry;
-      }
-
-      interface AirQualityData {
-        aqi: string;
-        category: string;
-        color: {
-          red: number;
-          green: number;
-          blue: number;
-        };
-      }
 
       const airQualityDataPromises = features.map(async (feature: Feature) => {
         const { coordinates } = feature.geometry;
-        const [lng, lat] = coordinates[0][0]; // Get the first coordinate of the polygon
-        
-        const requestBody = {
+        const [lng, lat] = coordinates[0][0];
+
+        const response = await axios.post('/api/getAirQuality', {
           location: {
             latitude: lat,
             longitude: lng,
           },
-        };
+        });
 
-        const response = await axios.post(
-          `https://airquality.googleapis.com/v1/currentConditions:lookup?key=${apiKey}`,
-          requestBody,
-          {
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          }
-        );
-        
-        console.log(response);
-        console.log(`Air quality data for coordinates (${lat}, ${lng}):`, response.data);
-
-        const airQualityData = response.data.indexes.find((index: { code: string }) => index.code === "uaqi") as AirQualityData;
         return {
           ...feature,
           properties: {
             ...feature.properties,
-            airQuality: airQualityData ? airQualityData.aqi : "N/A",
-            airQualityCategory: airQualityData ? airQualityData.category : "N/A",
-            airQualityColor: airQualityData ? `rgba(${airQualityData.color.red * 255}, ${airQualityData.color.green * 255}, ${airQualityData.color.blue * 255}, 1)` : "rgba(0, 0, 0, 0)",
+            ...response.data,
           },
         };
       });
 
       const airQualityData = await Promise.all(airQualityDataPromises);
-  
       const updatedGeoJson = {
         ...zipCodeGeoJson,
         features: airQualityData,
       };
 
       if (currMap) {
-        const airQualitySource = currMap.getSource('zip-codes') as mapboxgl.GeoJSONSource;
-        airQualitySource.setData(updatedGeoJson);
+        updateMapLayers(currMap, updatedGeoJson);
+      }
+    } catch (error) {
+      console.error('Error fetching air quality data:', error);
+    }
+  };
 
-        if (!currMap.getLayer('air-quality-polygons')) {
-          currMap.addLayer({
+  const updateMapLayers = (map: mapboxgl.Map, geoJson: GeoJSON.FeatureCollection) => {
+    const airQualitySource = map.getSource('zip-codes') as mapboxgl.GeoJSONSource;
+    airQualitySource.setData(geoJson);
+
+    if (!map.getLayer('air-quality-polygons')) {
+      map.addLayer({
         id: 'air-quality-polygons',
         type: 'fill',
         source: 'zip-codes',
@@ -377,11 +358,11 @@ const MapComponent: React.FC = () => {
           'fill-color': ['get', 'airQualityColor'],
           'fill-opacity': 0.5,
         },
-          });
-        }
-        
-        if (!currMap.getLayer('air-quality-labels')) {
-          currMap.addLayer({
+      });
+    }
+
+    if (!map.getLayer('air-quality-labels')) {
+      map.addLayer({
         id: 'air-quality-labels',
         type: 'symbol',
         source: 'zip-codes',
@@ -401,12 +382,7 @@ const MapComponent: React.FC = () => {
           'text-halo-color': '#ffffff',
           'text-halo-width': 2,
         },
-          });
-        }
-      }
-      }
-    catch (error) {
-      console.error('Error fetching air quality data:', error);
+      });
     }
   };
   
