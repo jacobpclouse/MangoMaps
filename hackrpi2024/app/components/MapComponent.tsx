@@ -10,11 +10,9 @@ const MapComponent: React.FC = () => {
     const [isMapLoaded, setIsMapLoaded] = useState(false);
 
     const bounds: [number, number, number, number] = [-74.0210, 40.6981, -73.8655, 40.9153];
-    const [selectedBuildingId, setSelectedBuildingId] = useState<number | null>(null);
+    const [selectedBuildingId, setSelectedBuildingId] = useState<string | null>(null);
     const [address, setAddress] = useState<string | null>(null);
     const [buildingInfo, setBuildingInfo] = useState<string | null>(null);
-    const [highlightedBuilding, setHighlightedBuilding] = useState<string | null>(null);
-    const [updateTrigger, setUpdateTrigger] = useState<boolean>(false); // State for forcing re-render
 
     useEffect(() => {
         const map = new mapboxgl.Map({
@@ -60,36 +58,17 @@ const MapComponent: React.FC = () => {
                     'fill-extrusion-opacity': 0.6,
                 }
             });
-
-            // Existing red highlight layer
             map.addLayer({
-                'id': 'highlighted-building',
-                'type': 'fill-extrusion',
-                'source': 'composite',
-                'source-layer': 'building',
-                'filter': ['==', 'id', ''],
-                'paint': {
-                    'fill-extrusion-color': '#ff0000',
-                    'fill-extrusion-height': ['get', 'height'],
-                    'fill-extrusion-base': ['get', 'min_height'],
-                    'fill-extrusion-opacity': 0.8,
-                }
-            });
-
-            // New yellow highlight layer
-            map.addLayer({
-                'id': 'yellow-highlight-building',
-                'type': 'fill-extrusion',
-                'source': 'composite',
-                'source-layer': 'building',
-                'filter': ['==', 'id', ''],
-                'paint': {
-                    'fill-extrusion-color': '#FFFF00', // Yellow color
-                    'fill-extrusion-height': ['get', 'height'],
-                    'fill-extrusion-base': ['get', 'min_height'],
-                    'fill-extrusion-opacity': 0.9,
-                }
-            });
+                id: 'highlighted-building',
+                type: 'fill',
+                source: 'composite',
+                'source-layer': 'building', // the specific source layer in mapbox streets for buildings
+                paint: {
+                  'fill-color': '#FFD700', // Highlight color, e.g., gold
+                  'fill-opacity': 0.6
+                },
+                filter: ['==', 'id', ''] // Initially filter to an empty string (no buildings highlighted)
+              });
 
             map.once('idle', () => {
                 clearInterval(interval);
@@ -133,36 +112,8 @@ const MapComponent: React.FC = () => {
             }
         };
 
-        const findBuildingAtCoordinates = (coordinates: [number, number]) => {
-            const [longitude, latitude] = coordinates;
-            const features = map.queryRenderedFeatures(
-                map.project([longitude, latitude]),
-                { layers: ['3d-buildings'] }
-            );
-
-            if (features.length > 0) {
-                const building = features[0];
-                const buildingId = building.id as string;
-
-                setBuildingInfo(`Building ID: ${building.id} Height: ${building.properties!.height}`);
-                setHighlightedBuilding(buildingId);
-                // Set filter for both the red and yellow highlight layers
-                map.setFilter('highlighted-building', ['==', 'id', buildingId]);
-                map.setFilter('yellow-highlight-building', ['==', 'id', buildingId]);
-                
-            } else {
-                setBuildingInfo("No building found at this location.");
-                setHighlightedBuilding(null);
-                map.setFilter('highlighted-building', ['==', 'id', '']);
-                map.setFilter('yellow-highlight-building', ['==', 'id', '']);
-                
-                // Trigger component re-render
-                setUpdateTrigger((prev) => !prev);
-            }
-        };
-
         return () => map.remove();
-    }, [updateTrigger]); // Depend on updateTrigger to re-render when it changes
+    }, []); // Depend on updateTrigger to re-render when it changes
 
     return (
         <div className="relative w-full h-screen">
