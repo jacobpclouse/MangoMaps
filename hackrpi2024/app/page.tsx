@@ -32,7 +32,7 @@ const App: React.FC = () => {
 	      <p
 	        className={`mt-12 text-xl text-center md:text-2xl px-12 ${sourGummy.className}`}
 	      >
-	        Ultra-Relistic, Data-Driven Disaster Simulation Playground to Limit Test
+	        Ultra-Realistic, Data-Driven Disaster Simulation Playground to Limit Test
 	        Your Urban Cities
 	      </p>
 	      <Link
