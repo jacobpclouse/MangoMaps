@@ -19,7 +19,7 @@ interface AirQualityData {
 export async function POST(request: Request) {
   try {
     const { location } = await request.json() as { location: Location };
-    const apiKey = process.env.GOOGLE_MAPS_API_KEY_JUSTIN;
+    const apiKey = process.env.GOOGLE_MAPS_API_KEY;
 
     if (!apiKey) {
       throw new Error('Google Maps API key is not configured');
